@@ -20,3 +20,5 @@ PredNet, implemented with pytorch.
     - Frames 0-9 (first 10 frames): provide actual data to model (teacher forcing)
     - Frames 10-19 (last 10 frames): model generates predictions without actual data (autoregressive, self-supervised)
     - Evaluation: separate evaluation code computes MSE/error metrics between predicted frames 10-19 and ground truth
+
+

@@ -47,16 +47,16 @@ using_default_channels = A_channels == default_channels
 num_layers = len(A_channels)
 
 #TODO: MNIST - device detection for CPU/GPU compatibility
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda'
 
 if loss_mode == 'L_0':
-	layer_loss_weights = torch.zeros((num_layers, 1), device=device)
+	layer_loss_weights = torch.zeros((num_layers, 1), device='cuda')
 	layer_loss_weights[0,0] = 1.
 elif loss_mode == 'L_all':
-	layer_loss_weights = 0.1 * torch.ones((num_layers, 1), device=device)
+	layer_loss_weights = 0.1 * torch.ones((num_layers, 1), device='cuda')
 	layer_loss_weights[0] = 1.
 
-time_loss_weights = 1./(nt - 1) * torch.ones((nt, 1), device=device) # lambda_t's in Lotter et al. 2017
+time_loss_weights = 1./(nt - 1) * torch.ones((nt, 1), device='cuda') # lambda_t's in Lotter et al. 2017
 time_loss_weights[0] = 0
 
 # Directories
@@ -78,8 +78,8 @@ val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True)
 model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_mode=gating_mode,
 				peephole=peephole, lstm_tied_bias=lstm_tied_bias)
 
-print(f'Using device: {device}')
-model.to(device)
+print('Using GPU.')
+model.cuda()
 model.apply(init_weights)
 
 if using_default_channels:
@@ -114,8 +114,8 @@ for epoch in range(num_epochs):
 
 	for step, (inputs, targets) in enumerate(train_loader):
 		# batch x time_steps x channel x width x height
-		inputs = inputs.to(device)
-		targets = targets.to(device)
+		inputs = inputs.cuda()
+		targets = targets.cuda()
 		# Refer to Eqn (5) in Lotter et al. 2017
 		# L_train = Sum_t( lam_t * Sum_l( lam_l/nl * Sum_{n_l}(E^t_l) ) )
 		errors = model(inputs) # batch x n_layers x nt
@@ -148,8 +148,8 @@ for epoch in range(num_epochs):
 	with torch.no_grad():
 		for step, (inputs, targets) in enumerate(val_loader):
 			# batch x time_steps x channels x width x heigth
-			inputs = inputs.to(device)
-			targets = targets.to(device)
+			inputs = inputs.cuda()
+			targets = targets.cuda()
 			errors = model(inputs) # barch x n_layers x nt
 			loc_batch = errors.size(0)
 			# Weighted sum of error time-components
