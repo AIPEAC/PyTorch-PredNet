@@ -21,4 +21,17 @@ PredNet, implemented with pytorch.
     - Frames 10-19 (last 10 frames): model generates predictions without actual data (autoregressive, self-supervised)
     - Evaluation: separate evaluation code computes MSE/error metrics between predicted frames 10-19 and ground truth
 
+## Transformer Integration Strategy
+The Transformer module is integrated with PredNet using a **fusion and feedback approach**:
+
+- **Input Processing**: At each timestep, after PredNet produces predictions, all layer outputs (E, R, Ahat) are fed independently into the Transformer as a sequence
+- **Temporal Modeling**: The Transformer maintains its hidden state across timesteps to capture temporal dependencies and patterns in the prediction sequence
+- **Output Fusion**: Transformer outputs are blended with PredNet outputs using a learnable or fixed fusion weight α:
+  - `combined_output = α * transformer_output + (1-α) * prednet_output`
+  - α controls the influence degree: 0% (pure PredNet) to 100% (pure Transformer)
+- **Feedback Loop**: The fused outputs serve as the next timestep's E/R/Ahat inputs for PredNet, allowing the Transformer to progressively refine predictions while maintaining PredNet's representational stability
+- **Benefits**: 
+  - Transformer learns long-term temporal patterns across the prediction sequence
+  - Incremental refinement: combines PredNet's stability with Transformer's adaptive correction capability
+  - Memory preservation: Transformer's hidden state enables cross-timestep learning and pattern recognition
 

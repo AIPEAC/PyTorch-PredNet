@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import json
 
 import torch
 import torch.nn as nn
@@ -26,8 +27,8 @@ def init_weights(m):
 			nn.init.zeros_(m.bias)
 
 # Training parameters
-num_epochs = 150
-batch_size = 4 # 16
+num_epochs = 40
+batch_size = 8
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
@@ -69,8 +70,8 @@ mnist_val = MNIST(val_file, nt, output_mode='error',  N_seq=n_val_seq)
 input_size = mnist_train.im_shape[1:3] #(64, 64)
 num_train_steps = len(mnist_train)//batch_size
 
-train_loader = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(mnist_train, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False)
+val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_mode=gating_mode,
 				peephole=peephole, lstm_tied_bias=lstm_tied_bias)
@@ -100,6 +101,7 @@ def lr_scheduler(optimizer, epoch):
 		return optimizer
 
 min_val_loss = float('inf')
+loss_history = []  # #TODO: Moving MNIST - save loss for plotting
 
 
 
@@ -160,6 +162,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
+	#TODO: Moving MNIST - save epoch loss to history
+	loss_history.append({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss})
+	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
 		min_val_loss = val_loss
@@ -169,3 +174,9 @@ for epoch in range(num_epochs):
 
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
+
+#TODO: Moving MNIST - save loss history to json for plotting
+loss_history_file = model_name + '-loss_history.json'
+with open(loss_history_file, 'w') as f:
+	json.dump(loss_history, f, indent=2)
+print(f'Loss history saved to {loss_history_file}')

@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import json
 
 import torch
 import torch.nn as nn
@@ -102,6 +103,7 @@ def lr_scheduler(optimizer, epoch):
 		return optimizer
 
 min_val_loss = float('inf')
+loss_history = []  # #TODO: Moving MNIST - save loss for plotting
 
 
 
@@ -162,6 +164,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
+	#TODO: Moving MNIST - save epoch loss to history
+	loss_history.append({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss})
+	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
 		min_val_loss = val_loss
@@ -171,3 +176,9 @@ for epoch in range(num_epochs):
 
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
+
+#TODO: Moving MNIST - save loss history to json for plotting
+loss_history_file = model_name + '-loss_history-train.json'
+with open(loss_history_file, 'w') as f:
+	json.dump(loss_history, f, indent=2)
+print(f'Loss history saved to {loss_history_file}')
