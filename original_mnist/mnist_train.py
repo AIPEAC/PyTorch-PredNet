@@ -27,7 +27,8 @@ def init_weights(m):
 
 # Training parameters
 num_epochs = 150
-batch_size = 4 # 16
+# TODO: MNIST - set batch size to 16 from 4
+batch_size = 16 # 16
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
@@ -124,6 +125,10 @@ for epoch in range(num_epochs):
 		# Refer to Eqn (5) in Lotter et al. 2017
 		# L_train = Sum_t( lam_t * Sum_l( lam_l/nl * Sum_{n_l}(E^t_l) ) )
 		errors = model(inputs) # batch x n_layers x nt
+		
+		if step == 0:
+			print(f'DEBUG - errors: min={errors.min()}, max={errors.max()}, mean={errors.mean()}')
+		
 		loc_batch = errors.size(0)
 		# Weighted sum of error time-components
 		# (batch*n_layers x nt)(nt x 1) -->  batch*n_layers x 1

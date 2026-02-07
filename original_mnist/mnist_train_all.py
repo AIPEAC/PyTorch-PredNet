@@ -27,7 +27,7 @@ def init_weights(m):
 
 # Training parameters
 num_epochs = 150
-batch_size = 4 # 16
+batch_size = 8
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
@@ -69,8 +69,8 @@ mnist_val = MNIST(val_file, nt, output_mode='error',  N_seq=n_val_seq)
 input_size = mnist_train.im_shape[1:3] #(64, 64)
 num_train_steps = len(mnist_train)//batch_size
 
-train_loader = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(mnist_train, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False)
+val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_mode=gating_mode,
 				peephole=peephole, lstm_tied_bias=lstm_tied_bias)
@@ -117,6 +117,10 @@ for epoch in range(num_epochs):
 		# Refer to Eqn (5) in Lotter et al. 2017
 		# L_train = Sum_t( lam_t * Sum_l( lam_l/nl * Sum_{n_l}(E^t_l) ) )
 		errors = model(inputs) # batch x n_layers x nt
+		
+		if step == 0:
+			print(f'DEBUG - errors: min={errors.min()}, max={errors.max()}, mean={errors.mean()}')
+		
 		loc_batch = errors.size(0)
 		# Weighted sum of error time-components
 		# (batch*n_layers x nt)(nt x 1) -->  batch*n_layers x 1
