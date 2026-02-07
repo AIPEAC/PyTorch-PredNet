@@ -39,14 +39,10 @@ peephole = False
 lstm_tied_bias = False
 gating_mode = 'mul'
 
-#TODO: MNIST - changed from (3, 48, 96, 192) to match single grayscale channel input
-default_channels = (1, 48, 96, 192)
-#TODO: MNIST - updated channel configuration for 1-channel grayscale
-channel_six_layers = (1, 48, 96, 192, 384, 768)
-#TODO: MNIST - changed A_channels from 3 to 1 for grayscale images
-A_channels = (1, 48, 96, 192)
-#TODO: MNIST - changed R_channels from 3 to 1 for grayscale images
-R_channels = (1, 48, 96, 192)
+#TODO: MNIST - set to (3, 48, 96, 192) for 3-channel RGB Moving MNIST input
+default_channels = (3, 48, 96, 192)
+A_channels = (3, 48, 96, 192)
+R_channels = (3, 48, 96, 192)
 using_default_channels = A_channels == default_channels
 num_layers = len(A_channels)
 
@@ -120,6 +116,11 @@ for epoch in range(num_epochs):
 		# batch x time_steps x channel x width x height
 		inputs = inputs.to(device)
 		targets = targets.to(device)
+		
+		# Debug: print input shape on first step
+		if step == 0:
+			print(f'DEBUG - inputs shape: {inputs.shape}, targets shape: {targets.shape}')
+		
 		# Refer to Eqn (5) in Lotter et al. 2017
 		# L_train = Sum_t( lam_t * Sum_l( lam_l/nl * Sum_{n_l}(E^t_l) ) )
 		errors = model(inputs) # batch x n_layers x nt

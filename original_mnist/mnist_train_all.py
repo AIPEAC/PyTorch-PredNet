@@ -39,14 +39,10 @@ peephole = False
 lstm_tied_bias = False
 gating_mode = 'mul'
 
-#TODO: MNIST - changed from (3, 48, 96, 192) to match single grayscale channel input
-default_channels = (1, 48, 96, 192)
-#TODO: MNIST - updated channel configuration for 1-channel grayscale
-channel_six_layers = (1, 48, 96, 192, 384, 768)
-#TODO: MNIST - changed A_channels from 3 to 1 for grayscale images
-A_channels = (1, 48, 96, 192)
-#TODO: MNIST - changed R_channels from 3 to 1 for grayscale images
-R_channels = (1, 48, 96, 192)
+#TODO: MNIST - set to (3, 48, 96, 192) for 3-channel RGB Moving MNIST input
+default_channels = (3, 48, 96, 192)
+A_channels = (3, 48, 96, 192)
+R_channels = (3, 48, 96, 192)
 using_default_channels = A_channels == default_channels
 num_layers = len(A_channels)
 
