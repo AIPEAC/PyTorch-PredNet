@@ -320,11 +320,12 @@ class PredNet(nn.Module):
 			else:
 				# Batch flatten (return 2D matrix) then mean over units
 				# Finally, concatenate layers (batch, n_layers)
-				mean_E_layers = torch.cat([torch.mean(e.view(batch_size, -1), axis=1, keepdim=True) for e in E_layers], axis=1)
+				#TODO: PredNet Transformer - Use reshape instead of view for non-contiguous tensors
+				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_layers], axis=1)
 				if self.output_mode == 'error':
 					output = mean_E_layers
 				else:
-					output = torch.cat([frame_prediction.view(batch_size, -1), mean_E_layers], axis=1)
+					output = torch.cat([frame_prediction.reshape(batch_size, -1), mean_E_layers], axis=1)
 
 		states = R_layers + C_layers + E_layers
 		if self.extrap_start_time is not None:
@@ -374,7 +375,8 @@ class PredNet(nn.Module):
 
 		ax = len(output.shape)
 		# print(output.shape)
-		total_output = [out.view(out.shape + (1,)) for out in total_output]
+		#TODO: PredNet Transformer - Use reshape instead of view for non-contiguous tensors
+		total_output = [out.reshape(out.shape + (1,)) for out in total_output]
 		total_output = torch.cat(total_output, axis=ax) # (batch, ..., nt)
 		return total_output
 
