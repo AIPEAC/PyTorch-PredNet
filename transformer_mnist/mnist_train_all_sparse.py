@@ -68,48 +68,51 @@ def save_batch_prediction(vis_model, inputs, epoch, step, history_dir, model_nam
 		pred = vis_model(inputs)  # (batch_size, channels, width, height, nt)
 		vis_model.train()  # Switch back to train mode
 	
+	# inputs is (batch, nt, channels, width, height)
+	targets = inputs  # batch x nt x channels x width x height
 	pred = pred.cpu()
 	pred = pred.permute(0, 4, 1, 2, 3)  # (batch_size, nt, channels, width, height)
 	
-	# Convert inputs to predictions format (same shape as pred)
-	inputs_vis = inputs.cpu()
-	inputs_vis = inputs_vis.permute(0, 2, 1, 3, 4)  # (batch_size, channels, nt, width, height)
-	inputs_vis = inputs_vis.permute(0, 2, 1, 3, 4)  # Back to (batch_size, nt, channels, width, height)
-	
 	# Only visualize first sequence in batch
-	targets = inputs_vis[0] * 255.  # Use first frame as reference
-	pred = pred[0] * 255.
+	targets = targets[0:1].cpu()  # Keep batch dimension: (1, nt, channels, width, height)
+	pred = pred[0:1]  # (1, nt, channels, width, height)
 	
-	targets = np.transpose(targets.detach().numpy(), (0, 2, 3, 1))
-	pred = np.transpose(pred.detach().numpy(), (0, 2, 3, 1))
+	# Convert to numpy and scale
+	targets = targets.detach().numpy() * 255.
+	pred = pred.detach().numpy() * 255.
+	
+	# Transpose to (batch, nt, width, height, channels)
+	targets = np.transpose(targets, (0, 1, 3, 4, 2))
+	pred = np.transpose(pred, (0, 1, 3, 4, 2))
 	
 	targets = targets.astype(int)
 	pred = pred.astype(int)
 	
-	#TODO: Transformer MNIST Sparse Training - Reduce figsize to minimize whitespace
-	fig = plt.figure(figsize=(nt*0.25, 1.2))
+	i = 0  # Only one sequence (first one)
+	aspect_ratio = float(pred.shape[2]) / pred.shape[3]
+	fig = plt.figure(figsize=(nt, 2*aspect_ratio))
 	gs = gridspec.GridSpec(2, nt)
-	gs.update(wspace=0.01, hspace=0.05)
+	gs.update(wspace=0., hspace=0.)
 	
 	for t in range(nt):
 		plt.subplot(gs[t])
-		plt.imshow(targets[t], interpolation='none', cmap='gray')
+		plt.imshow(targets[i,t], interpolation='none', cmap='gray')
 		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 		if t==0: plt.ylabel('Input', fontsize=10)
 		
 		plt.subplot(gs[t + nt])
-		plt.imshow(pred[t], interpolation='none', cmap='gray')
+		plt.imshow(pred[i,t], interpolation='none', cmap='gray')
 		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 		if t==0: plt.ylabel('Predicted', fontsize=10)
 	
 	img_filename = f'{model_name}-epoch{epoch:02d}-step{step:05d}'
 	pred_plot_dir = os.path.join(history_dir, 'prediction_plots')
 	os.makedirs(pred_plot_dir, exist_ok=True)
-	img_path = os.path.join(pred_plot_dir, img_filename + '.png')
+	img_path = os.path.join(pred_plot_dir, img_filename)
 	
-	plt.savefig(img_path, dpi=80, bbox_inches='tight')
-	plt.close()
-	print(f'Prediction saved: {img_path}')
+	plt.savefig(img_path + '.png')
+	plt.clf()
+	print(f'Prediction saved: {img_path}.png')
 
 
 # Training parameters
