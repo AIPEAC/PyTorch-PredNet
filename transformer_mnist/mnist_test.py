@@ -61,24 +61,29 @@ input_size = mnist_test.im_shape[1:3] #(64, 64)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='prediction', gating_mode=gating_mode,
 				extrap_start_time=extrap_start_time, peephole=peephole, lstm_tied_bias=lstm_tied_bias,
-				use_transformer=False, num_transformer_heads=4)
+				use_transformer=True, num_transformer_heads=4)
 
 # #TODO: Transformer - Handle state_dict mismatch by loading only compatible keys
+state_dict = torch.load(model_file)
+model_state = model.state_dict()
+
+# Check for missing/extra keys
+missing_keys = set(model_state.keys()) - set(state_dict.keys())
+extra_keys = set(state_dict.keys()) - set(model_state.keys())
+
+if missing_keys:
+	print(f"Missing keys in checkpoint: {missing_keys}")
+if extra_keys:
+	print(f"Extra keys in checkpoint: {extra_keys}")
+
 try:
-	model.load_state_dict(torch.load(model_file))
+	model.load_state_dict(state_dict)
+	print("Loaded all weights successfully")
 except RuntimeError as e:
-	state_dict = torch.load(model_file)
-	model_state = model.state_dict()
-	
-	# Filter out keys that don't exist in the current model
-	filtered_state = {}
-	for k, v in state_dict.items():
-		if k in model_state:
-			filtered_state[k] = v
-	
-	# Load filtered state dict with strict=False
-	model.load_state_dict(filtered_state, strict=False)
-	print(f"Loaded {len(filtered_state)}/{len(state_dict)} weight keys")
+	print(f"Load error: {e}")
+	# Load with strict=False
+	model.load_state_dict(state_dict, strict=False)
+	print(f"Loaded {len(state_dict)}/{len(model_state)} weight keys with strict=False")
 
 print('Model: ' + model_name)
 if torch.cuda.is_available():

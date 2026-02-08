@@ -137,9 +137,9 @@ def lr_scheduler(optimizer, epoch):
 min_val_loss = float('inf')
 loss_history = []  # #TODO: Moving MNIST - save loss for plotting
 
-#TODO: Transformer MNIST Sparse - Setup parameter tracking file (jsonl format, one record per line)
-data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
-os.makedirs(data_compare_dir, exist_ok=True)
+#TODO: Transformer MNIST Sparse - Setup parameter tracking file in history directory (jsonl format)
+history_dir = os.path.join(os.path.dirname(__file__), 'history')
+os.makedirs(history_dir, exist_ok=True)
 
 # Determine base model name for parameter file
 if using_default_channels:
@@ -148,7 +148,7 @@ else:
 	channels_str = '_'.join([str(x) for x in A_channels])
 	model_name_temp = 'prednet-tf-sparse-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
 
-param_file = os.path.join(data_compare_dir, f'transformer_mnist-{model_name_temp}-param_history.jsonl')
+param_file = os.path.join(history_dir, f'{model_name_temp}-param_history.jsonl')
 if os.path.exists(param_file):
 	os.remove(param_file)  # Clear previous run
 print(f'Parameter history will be saved to: {param_file}')
@@ -186,8 +186,6 @@ for epoch in range(num_epochs):
 
 		if step % 10 == 0:
 			print('step: {}/{}, loss: {:.6f}'.format(step, num_train_steps, loss))
-		#TODO: Transformer MNIST Sparse - Record all parameters after each batch to avoid memory accumulation
-		record_parameters_to_file(model, epoch+1, step, step // batch_size, param_file)
 		#TODO: Transformer MNIST Sparse - Record all parameters after each batch to avoid memory accumulation
 		record_parameters_to_file(model, epoch+1, step, step // batch_size, param_file)
 
@@ -233,6 +231,7 @@ print(f'\nFinal alpha_E0 (E layer fusion weight): {alpha_e0:.6f}')
 print(f'  (0.0 = 100% original E, 1.0 = 100% transformer E)')
 
 #TODO: Moving MNIST - save loss history to json in data_compare/loss_history
+data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
 os.makedirs(data_compare_dir, exist_ok=True)
 loss_history_file = 'transformer_mnist-' + model_name + '-loss_history.json'
 loss_history_path = os.path.join(data_compare_dir, loss_history_file)
