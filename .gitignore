@@ -19,6 +19,9 @@ X_val.hkl
 # training scripts
 *.bat
 
+# test file
+mnist_test_500.py
+
 # original Kitti stuffs
 raw/
 kitti_raw_data_test.zip
