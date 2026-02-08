@@ -21,6 +21,7 @@ X_val.hkl
 
 # test file
 mnist_test_50.py
+mnist_train_all_short.py
 mnist_train_all_sparse_short.py
 
 # original Kitti stuffs
