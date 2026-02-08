@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import json
 
 import os
 import hickle as hkl
@@ -69,6 +70,8 @@ if torch.cuda.is_available():
 
 pred_MSE = 0.0
 copy_last_MSE = 0.0
+sequence_mses = []  # #TODO: Moving MNIST - record per-sequence MSE
+seq_idx = 0
 for step, (inputs, targets) in enumerate(test_loader):
 	# ---------------------------- Test Loop -----------------------------
 	# print(f"inputs {inputs.shape}")
@@ -84,6 +87,12 @@ for step, (inputs, targets) in enumerate(test_loader):
 		print('inputs: ', inputs.size())
 		print('targets: ', targets.size())
 		print('predicted: ', pred.size(), pred.dtype)
+
+	#TODO: Moving MNIST - calculate per-sequence MSE
+	for i in range(targets.shape[0]):
+		seq_mse = torch.mean((targets[i, 1:] - pred[i, 1:])**2).item()
+		sequence_mses.append({'sequence_idx': seq_idx, 'mse': seq_mse})
+		seq_idx += 1
 
 	pred_MSE += torch.mean((targets[:, 1:] - pred[:, 1:])**2).item() # look at all timesteps after the first
 	copy_last_MSE += torch.mean((targets[:, 1:] - targets[:, :-1])**2).item()
@@ -142,3 +151,9 @@ copy_last_MSE /= num_steps
 
 print('Prediction MSE: {:.6f}'.format(pred_MSE)) # no need to worry about "first time step"
 print('Copy-Last MSE: {:.6f}'.format(copy_last_MSE))
+
+#TODO: Moving MNIST - save per-sequence MSE to json
+test_mse_file = model_name + '-test_sequence_mse.json'
+with open(test_mse_file, 'w') as f:
+	json.dump(sequence_mses, f, indent=2)
+print(f'Sequence MSE saved to {test_mse_file}')
