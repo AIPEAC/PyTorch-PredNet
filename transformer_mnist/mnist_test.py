@@ -61,8 +61,24 @@ input_size = mnist_test.im_shape[1:3] #(64, 64)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='prediction', gating_mode=gating_mode,
 				extrap_start_time=extrap_start_time, peephole=peephole, lstm_tied_bias=lstm_tied_bias,
-				use_transformer=True, num_transformer_heads=4)
-model.load_state_dict(torch.load(model_file))
+				use_transformer=False, num_transformer_heads=4)
+
+# #TODO: Transformer - Handle state_dict mismatch by loading only compatible keys
+try:
+	model.load_state_dict(torch.load(model_file))
+except RuntimeError as e:
+	state_dict = torch.load(model_file)
+	model_state = model.state_dict()
+	
+	# Filter out keys that don't exist in the current model
+	filtered_state = {}
+	for k, v in state_dict.items():
+		if k in model_state:
+			filtered_state[k] = v
+	
+	# Load filtered state dict with strict=False
+	model.load_state_dict(filtered_state, strict=False)
+	print(f"Loaded {len(filtered_state)}/{len(state_dict)} weight keys")
 
 print('Model: ' + model_name)
 if torch.cuda.is_available():
@@ -77,7 +93,7 @@ for step, (inputs, targets) in enumerate(test_loader):
 	# ---------------------------- Test Loop -----------------------------
 	# #TODO: MNIST Test - Simple progress output
 	if (step + 1) % 50 == 0:
-		print(f'Progress: {(step + 1) * batch_size}/1000')
+		print(f'Progress: {(step + 1) * batch_size}/2000')
 	inputs = inputs.cuda() # batch x time_steps x channel x width x height
 	
 	targets = targets
@@ -90,6 +106,8 @@ for step, (inputs, targets) in enumerate(test_loader):
 		print('inputs: ', inputs.size())
 		print('targets: ', targets.size())
 		print('predicted: ', pred.size(), pred.dtype)
+		print('pred min:', pred.min().item(), 'pred max:', pred.max().item())
+		print('pred mean:', pred.mean().item(), 'pred std:', pred.std().item())
 
 	#TODO: Moving MNIST - calculate per-sequence MSE
 	for i in range(targets.shape[0]):

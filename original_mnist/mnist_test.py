@@ -76,7 +76,7 @@ for step, (inputs, targets) in enumerate(test_loader):
 	# ---------------------------- Test Loop -----------------------------
 	# #TODO: MNIST Test - Simple progress output
 	if (step + 1) % 50 == 0:
-		print(f'Progress: {(step + 1) * batch_size}/1000')
+		print(f'Progress: {(step + 1) * batch_size}/2000')
 	inputs = inputs.cuda() # batch x time_steps x channel x width x height
 	
 	targets = targets
