@@ -12,14 +12,18 @@ def load_sequence_mse(json_file):
 def plot_comparison():
     """Plot per-sequence MSE comparison between original_mnist and transformer_mnist"""
     
-    # Find sequence MSE files
-    original_files = glob.glob('original_mnist/prednet-*-test_sequence_mse.json')
-    transformer_files = glob.glob('transformer_mnist/prednet-*-test_sequence_mse.json')
+    #TODO: MNIST - collect json files from current directory
+    # Find sequence MSE files from current directory
+    all_files = glob.glob('*-test_sequence_mse.json')
+    
+    original_files = [f for f in all_files if f.startswith('original_mnist-')]
+    transformer_files = [f for f in all_files if f.startswith('transformer_mnist-')]
     
     if not original_files or not transformer_files:
         print("Error: Cannot find test sequence MSE files")
         print(f"Original files: {original_files}")
         print(f"Transformer files: {transformer_files}")
+        print(f"Available files in current directory: {all_files}")
         return
     
     original_file = original_files[0]

@@ -97,7 +97,8 @@ for step, (inputs, targets) in enumerate(test_loader):
 	pred_MSE += torch.mean((targets[:, 1:] - pred[:, 1:])**2).item() # look at all timesteps after the first
 	copy_last_MSE += torch.mean((targets[:, 1:] - targets[:, :-1])**2).item()
 	
-	if step == 20: # change this number to control the starting sequence of your video clip
+	#TODO: MNIST - test full dataset - removed step == 20 condition and break to test all sequences
+	if step == num_steps - 1: # Plot predictions from last batch only
 		# Plot some predictions
 		targets = targets.detach().numpy() * 255.
 		pred = pred.detach().numpy() * 255.
@@ -142,8 +143,6 @@ for step, (inputs, targets) in enumerate(test_loader):
 			plt.savefig(img_filename + '.png')
 			plt.clf()
 			print(f'Image Saved as {img_filename}.png')
-		
-		break
 
 # Calculate dataset MSE
 pred_MSE /= num_steps
@@ -152,8 +151,11 @@ copy_last_MSE /= num_steps
 print('Prediction MSE: {:.6f}'.format(pred_MSE)) # no need to worry about "first time step"
 print('Copy-Last MSE: {:.6f}'.format(copy_last_MSE))
 
-#TODO: Moving MNIST - save per-sequence MSE to json
-test_mse_file = model_name + '-test_sequence_mse.json'
-with open(test_mse_file, 'w') as f:
+#TODO: Moving MNIST - save per-sequence MSE to json in data_compare/test_plots
+data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'test_plots')
+os.makedirs(data_compare_dir, exist_ok=True)
+test_mse_file = 'transformer_mnist-' + model_name + '-test_sequence_mse.json'
+test_mse_path = os.path.join(data_compare_dir, test_mse_file)
+with open(test_mse_path, 'w') as f:
 	json.dump(sequence_mses, f, indent=2)
-print(f'Sequence MSE saved to {test_mse_file}')
+print(f'Sequence MSE saved to {test_mse_path}')

@@ -8,9 +8,10 @@ def load_loss_history(json_file):
     with open(json_file, 'r') as f:
         return json.load(f)
 
-def find_loss_files(directory, suffix=''):
-    """Find loss history files in directory"""
-    pattern = f'{directory}/prednet-*-loss_history{suffix}.json'
+def find_loss_files(source_prefix='', suffix=''):
+    """Find loss history files in current directory"""
+    #TODO: MNIST - collect json files from current directory
+    pattern = f'{source_prefix}*-loss_history{suffix}.json'
     files = glob.glob(pattern)
     if files:
         return files[0]
@@ -19,14 +20,14 @@ def find_loss_files(directory, suffix=''):
 def plot_comparison():
     """Plot loss comparison from different training runs"""
     
-    # Find loss history files
-    # Format: prednet-*-loss_history.json (from mnist_train_all.py)
-    # Format: prednet-*-loss_history-train.json (from mnist_train.py)
+    # Find loss history files from current directory
+    # Format: original_mnist-*-loss_history.json (from mnist_train_all.py)
+    # Format: transformer_mnist-*-loss_history.json (from mnist_train_all.py)
     
-    original_all = find_loss_files('original_mnist', '')
-    original_train = find_loss_files('original_mnist', '-train')
-    transformer_all = find_loss_files('transformer_mnist', '')
-    transformer_train = find_loss_files('transformer_mnist', '-train')
+    original_all = find_loss_files('original_mnist-', '')
+    original_train = find_loss_files('original_mnist-', '-train')
+    transformer_all = find_loss_files('transformer_mnist-', '')
+    transformer_train = find_loss_files('transformer_mnist-', '-train')
     
     print(f"Original (all): {original_all}")
     print(f"Original (train): {original_train}")

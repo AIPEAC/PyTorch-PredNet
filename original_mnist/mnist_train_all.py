@@ -179,8 +179,11 @@ for epoch in range(num_epochs):
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
 
-#TODO: Moving MNIST - save loss history to json for plotting
-loss_history_file = model_name + '-loss_history.json'
-with open(loss_history_file, 'w') as f:
+#TODO: Moving MNIST - save loss history to json in data_compare/loss_history
+data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
+os.makedirs(data_compare_dir, exist_ok=True)
+loss_history_file = 'original_mnist-' + model_name + '-loss_history.json'
+loss_history_path = os.path.join(data_compare_dir, loss_history_file)
+with open(loss_history_path, 'w') as f:
 	json.dump(loss_history, f, indent=2)
-print(f'Loss history saved to {loss_history_file}')
+print(f'Loss history saved to {loss_history_path}')
