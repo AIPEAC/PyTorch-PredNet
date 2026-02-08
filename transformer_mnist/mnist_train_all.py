@@ -27,6 +27,34 @@ def init_weights(m):
 		if m.bias is not None:
 			nn.init.zeros_(m.bias)
 
+#TODO: Transformer MNIST - Function to extract and record all model parameters
+def record_parameters_to_file(model, epoch, step, batch_idx, param_file):
+	"""Extract all model parameters and append to json file (efficient, no memory accumulation)"""
+	param_record = {
+		'epoch': epoch,
+		'step': step,
+		'batch_idx': batch_idx,
+		'parameters': {}
+	}
+	
+	# Record all parameters
+	for name, param in model.named_parameters():
+		if param.requires_grad:
+			values = param.data.cpu().detach().numpy()
+			# Store statistics instead of full tensor to save memory
+			param_record['parameters'][name] = {
+				'mean': float(values.mean()),
+				'std': float(values.std()),
+				'min': float(values.min()),
+				'max': float(values.max()),
+				'norm': float(values.reshape(-1).dot(values.reshape(-1)))**0.5,
+				'shape': list(values.shape)
+			}
+	
+	# Append to file (line by line, not accumulating in memory)
+	with open(param_file, 'a') as f:
+		f.write(json.dumps(param_record) + '\n')
+
 # Training parameters
 num_epochs = 40
 batch_size = 8
@@ -107,7 +135,21 @@ def lr_scheduler(optimizer, epoch):
 min_val_loss = float('inf')
 loss_history = []  # #TODO: Moving MNIST - save loss for plotting
 
+#TODO: Transformer MNIST - Setup parameter tracking file (jsonl format, one record per line)
+data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
+os.makedirs(data_compare_dir, exist_ok=True)
 
+# Determine base model name for parameter file
+if using_default_channels:
+	model_name_temp = 'prednet-tf-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias)
+else:
+	channels_str = '_'.join([str(x) for x in A_channels])
+	model_name_temp = 'prednet-tf-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
+
+param_file = os.path.join(data_compare_dir, f'transformer_mnist-{model_name_temp}-param_history.jsonl')
+if os.path.exists(param_file):
+	os.remove(param_file)  # Clear previous run
+print(f'Parameter history will be saved to: {param_file}')
 
 for epoch in range(num_epochs):
 
@@ -142,6 +184,8 @@ for epoch in range(num_epochs):
 
 		if step % 10 == 0:
 			print('step: {}/{}, loss: {:.6f}'.format(step, num_train_steps, loss))
+		#TODO: Transformer MNIST - Record all parameters after each batch to avoid memory accumulation
+		record_parameters_to_file(model, epoch+1, step, step // batch_size, param_file)
 
 	train_loss /= len(mnist_train)
 	print('Epoch: {}/{}, loss: {:.6f}'.format(epoch+1, num_epochs, train_loss)) 
@@ -180,10 +224,10 @@ for epoch in range(num_epochs):
 torch.save(model.state_dict(), model_name + '.pt')
 
 #TODO: Moving MNIST - save loss history to json in data_compare/loss_history
-data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
 os.makedirs(data_compare_dir, exist_ok=True)
 loss_history_file = 'transformer_mnist-' + model_name + '-loss_history.json'
 loss_history_path = os.path.join(data_compare_dir, loss_history_file)
 with open(loss_history_path, 'w') as f:
 	json.dump(loss_history, f, indent=2)
 print(f'Loss history saved to {loss_history_path}')
+print(f'Parameter history jsonl saved to {param_file}')
