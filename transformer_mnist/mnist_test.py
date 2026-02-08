@@ -135,7 +135,8 @@ for step, (inputs, targets) in enumerate(test_loader):
 		gs = gridspec.GridSpec(2, nt)
 		gs.update(wspace=0., hspace=0.)
 		plot_save_dir = os.path.join(RESULTS_SAVE_DIR, 'transformer_mnist/prediction_plots/') # NOTE: images saved to transformer_mnist/prediction_plots/
-		if not os.path.exists(plot_save_dir): os.mkdir(plot_save_dir)
+		if not os.path.exists(plot_save_dir): 
+			os.makedirs(plot_save_dir, exist_ok=True)
 		plot_idx = np.random.permutation(targets.shape[0])[:n_plot]
 		for i in plot_idx:
 			for t in range(nt):
