@@ -27,8 +27,8 @@ def init_weights(m):
 			nn.init.zeros_(m.bias)
 
 # Training parameters
-num_epochs = 40
-batch_size = 8
+num_epochs = 6
+batch_size = 2
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
