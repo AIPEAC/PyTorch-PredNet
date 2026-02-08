@@ -16,7 +16,7 @@ import numpy as np
 from mnist_data import MNIST
 #TODO: MNIST - import from mnist_settings
 from mnist_settings import *
-from prednet_tf import PredNet 
+from prednet_tf_sparse import PredNet 
 
 # Visualization parameters
 n_plot = 4 # number of plot to make (must be <= batch_size)
@@ -29,7 +29,7 @@ peephole = False
 lstm_tied_bias = False
 nt = 20  # #TODO: Moving MNIST - changed to match training (was 10)
 extrap_start_time = 10  #TODO: Moving MNIST - frames 0-9 use real data, frames 10-19 are autoregressive predictions
-batch_size = 4
+batch_size = 2
 
 #TODO: MNIST - changed from (3, 48, 96, 192) to match single grayscale channel input
 default_channels = (3, 48, 96, 192)
@@ -46,7 +46,7 @@ test_file = os.path.join(DATA_DIR, 'X_test.hkl')
 #TODO: MNIST - removed test_sources, no source tracking needed
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
-model_name = 'prednet-L_all-mul-peepFalse-tbiasFalse-best'  # #TODO: Change the model to other models
+model_name = 'prednet-tf-sparse-L_all-mul-peepFalse-tbiasFalse-best'  # #TODO: Change the model to other models
 model_file = os.path.join(MODEL_DIR, model_name + '.pt')
 
 RESULTS_SAVE_DIR = './'
@@ -60,7 +60,8 @@ test_loader = DataLoader(mnist_test, batch_size=batch_size, shuffle=False)
 input_size = mnist_test.im_shape[1:3] #(64, 64)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='prediction', gating_mode=gating_mode,
-				extrap_start_time=extrap_start_time, peephole=peephole, lstm_tied_bias=lstm_tied_bias)
+				extrap_start_time=extrap_start_time, peephole=peephole, lstm_tied_bias=lstm_tied_bias,
+				use_transformer=True, num_transformer_heads=4)
 model.load_state_dict(torch.load(model_file))
 
 print('Model: ' + model_name)
