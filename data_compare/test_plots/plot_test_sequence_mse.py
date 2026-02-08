@@ -238,3 +238,5 @@ def plot_comparison():
     else:
         print("Error: No test sequence MSE files found!")
         print(f"Available files in current directory: {all_files}")
+if __name__ == '__main__':
+    plot_comparison()
