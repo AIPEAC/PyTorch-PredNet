@@ -42,9 +42,9 @@ class PredNet(nn.Module):
 		lstm_tied_bias: boolean
 			To use tied/untied bias in ConvLSTM convolutions
 		use_transformer: boolean
-			#TODO: PredNet Transformer - Enable/disable Transformer fusion
+			#TODO: PredNet Transformer Sparse - Enable/disable sparse transformer (every 2 timesteps) for Layer 0 E only
 		num_transformer_heads: int
-			#TODO: PredNet Transformer - Number of attention heads for each transformer layer
+			#TODO: PredNet Transformer Sparse - Number of attention heads for transformer layer
 		"""
 		
 		super(PredNet, self).__init__()
@@ -109,35 +109,16 @@ class PredNet(nn.Module):
 			update_A = nn.Sequential(nn.Conv2d(2* self.a_channels[l], self.a_channels[l+1], (3, 3), padding=1), self.maxpool)
 			setattr(self, 'update_A{}'.format(l), update_A)
 
-		# #TODO: PredNet Transformer - Initialize independent transformer blocks for each layer
+		# #TODO: PredNet Transformer Sparse - Initialize transformer block for Layer 0 E only (applied sparsely)
 		if self.use_transformer:
-			# Pre-calculate spatial dimensions for each layer
-			h, w = self.input_size
-			spatial_dims = []
-			for i in range(self.n_layers):
-				spatial_dims.append((h, w))
-				h = h // 2
-				w = w // 2
+			# #TODO: PredNet Transformer Sparse - Create single transformer for Layer 0 E (64x64, 6 channels)
+			e_dim = 2 * self.a_channels[0]
+			e_heads = self._get_valid_num_heads(e_dim, num_transformer_heads)
+			e_transformer = TransformerBlock(e_dim, num_heads=e_heads)
+			setattr(self, 'transformer_E0', e_transformer)
 
-			# #TODO: PredNet Transformer - Create independent transformers for E, R, Ahat at each layer
-			for l in range(self.n_layers):
-				# E layer: 2 * a_channels[l] channels
-				e_dim = 2 * self.a_channels[l]
-				e_heads = self._get_valid_num_heads(e_dim, num_transformer_heads)
-				e_transformer = TransformerBlock(e_dim, num_heads=e_heads)
-				setattr(self, 'transformer_E{}'.format(l), e_transformer)
-
-				# R layer: r_channels[l] channels
-				r_dim = self.r_channels[l]
-				r_heads = self._get_valid_num_heads(r_dim, num_transformer_heads)
-				r_transformer = TransformerBlock(r_dim, num_heads=r_heads)
-				setattr(self, 'transformer_R{}'.format(l), r_transformer)
-
-			# #TODO: PredNet Transformer - Learnable fusion weights alpha for E and R only (removed Ahat)
-			for l in range(self.n_layers):
-				# Independent alpha for E, R at each layer (Ahat removed as it's not used)
-				setattr(self, 'alpha_E{}'.format(l), nn.Parameter(torch.tensor(0.5)))
-				setattr(self, 'alpha_R{}'.format(l), nn.Parameter(torch.tensor(0.5)))
+			# #TODO: PredNet Transformer Sparse - Learnable fusion weight alpha for Layer 0 E
+			setattr(self, 'alpha_E0', nn.Parameter(torch.tensor(0.5)))
 	
 	def _get_valid_num_heads(self, input_dim, num_heads):
 		"""
@@ -155,7 +136,7 @@ class PredNet(nn.Module):
 		valid_num_heads: int
 			The largest num_heads <= desired num_heads that divides input_dim
 		"""
-		# #TODO: PredNet Transformer - Find valid num_heads that divides input_dim
+		# #TODO: PredNet Transformer Sparse - Find valid num_heads that divides input_dim
 		if input_dim % num_heads == 0:
 			return num_heads
 		# Find largest divisor of input_dim that is <= num_heads
@@ -206,21 +187,21 @@ class PredNet(nn.Module):
 		"""
 		batch_size, channels, height, width = feature_map.shape
 		
-		# #TODO: PredNet Transformer - Reshape feature map to (batch, height*width, channels) for transformer
+		# #TODO: PredNet Transformer Sparse - Reshape feature map to (batch, height*width, channels) for transformer
 		# Treat each spatial position as a token in the sequence
 		feature_flat = feature_map.permute(0, 2, 3, 1)  # (batch, height, width, channels)
 		feature_flat = feature_flat.reshape(batch_size, height*width, channels)  # (batch, seq_len, channels)
 		
-		# #TODO: PredNet Transformer - Apply transformer block
+		# #TODO: PredNet Transformer Sparse - Apply transformer block
 		transformed = transformer_block(feature_flat)
 		
-		# #TODO: PredNet Transformer - Reshape back to (batch, channels, height, width)
+		# #TODO: PredNet Transformer Sparse - Reshape back to (batch, channels, height, width)
 		transformed = transformed.reshape(batch_size, height, width, channels)
 		transformed = transformed.permute(0, 3, 1, 2)  # (batch, channels, height, width)
 		
 		return transformed
 	
-	def step(self, a, states):
+	def step(self, a, states, time_step=0):
 		"""
 		step:
 		Performs inference for a single time step
@@ -232,6 +213,8 @@ class PredNet(nn.Module):
 		states: list
 			contains layer states -->  [R + C + E]
 			if self.extrap_start_time --> [R + C + E, prev_pred, t]
+		time_step: int
+			Current time step index (for sparse transformer application)
 		"""
 		
 		batch_size = a.size(0)
@@ -270,21 +253,14 @@ class PredNet(nn.Module):
 			neg = F.relu(a - a_hat)
 			e = torch.cat([pos, neg],1)
 			
-			# #TODO: PredNet Transformer - Apply transformer and fusion for E and R only (Ahat removed)
-			if self.use_transformer:
-				transformer_E = getattr(self, 'transformer_E{}'.format(l))
-				transformer_R = getattr(self, 'transformer_R{}'.format(l))
-
-				# Apply transformers to E and R components
+			# #TODO: PredNet Transformer Sparse - Apply transformer only to Layer 0 E and only every 3 timesteps (0,3,6,9...)
+			if self.use_transformer and l == 0 and time_step % 3 == 0:
+				transformer_E = getattr(self, 'transformer_E0')
 				e_transformed = self._apply_transformer_to_feature_map(e, transformer_E)
-				r_transformed = self._apply_transformer_to_feature_map(R_layers[l], transformer_R)
-
-				# #TODO: PredNet Transformer - Fuse transformer outputs with original outputs using independent learnable weights for E and R
-				alpha_e = torch.sigmoid(getattr(self, 'alpha_E{}'.format(l)))
-				alpha_r = torch.sigmoid(getattr(self, 'alpha_R{}'.format(l)))
 				
+				# #TODO: PredNet Transformer Sparse - Fuse transformer output with original E using learnable weight alpha_E0
+				alpha_e = torch.sigmoid(getattr(self, 'alpha_E0'))
 				e = alpha_e * e_transformed + (1 - alpha_e) * e
-				R_layers[l] = alpha_r * r_transformed + (1 - alpha_r) * R_layers[l]
 			
 			E_layers[l] = e
 			
@@ -309,7 +285,6 @@ class PredNet(nn.Module):
 			else:
 				# Batch flatten (return 2D matrix) then mean over units
 				# Finally, concatenate layers (batch, n_layers)
-				#TODO: PredNet Transformer - Use reshape instead of view for non-contiguous tensors
 				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_layers], axis=1)
 				if self.output_mode == 'error':
 					output = mean_E_layers
@@ -359,13 +334,12 @@ class PredNet(nn.Module):
 		total_output = [] # contains output sequence
 		for t in range(num_time_steps):
 			a = input[:,t].type(torch.FloatTensor).to(device)
-			output, states = self.step(a, states)
+			# #TODO: PredNet Transformer Sparse - Pass time step to step function for sparse transformer
+			output, states = self.step(a, states, time_step=t)
 			total_output.append(output)
 
 		ax = len(output.shape)
 		# print(output.shape)
-		#TODO: PredNet Transformer - Use reshape instead of view for non-contiguous tensors
 		total_output = [out.reshape(out.shape + (1,)) for out in total_output]
 		total_output = torch.cat(total_output, axis=ax) # (batch, ..., nt)
 		return total_output
-

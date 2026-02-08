@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader
 
 from mnist_data import MNIST
 from mnist_settings import *
-#TODO: Transformer MNIST - Import Transformer-enabled PredNet
-from prednet_tf import PredNet
+#TODO: Transformer MNIST Sparse - Import sparse transformer-enabled PredNet
+from prednet_tf_sparse import PredNet
 
 def init_weights(m):
 	""""
@@ -28,8 +28,9 @@ def init_weights(m):
 			nn.init.zeros_(m.bias)
 
 # Training parameters
-num_epochs = 40
-batch_size = 8
+num_epochs = 6
+#TODO: Transformer MNIST Sparse - Reduced batch_size from 8 to 2
+batch_size = 2
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
@@ -76,7 +77,7 @@ val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True, num_work
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_mode=gating_mode,
 				peephole=peephole, lstm_tied_bias=lstm_tied_bias,
-				#TODO: Transformer MNIST - Enable transformer fusion for R and E only (removed Ahat as it's not used downstream)
+				#TODO: Transformer MNIST Sparse - Enable sparse transformer (every 3 timesteps) for Layer 0 E
 				use_transformer=True, num_transformer_heads=4)
 
 if torch.cuda.is_available():
@@ -85,11 +86,11 @@ if torch.cuda.is_available():
 model.apply(init_weights)
 
 if using_default_channels:
-	#TODO: Transformer MNIST - Add -tf suffix to distinguish transformer version
-	model_name = 'prednet-tf-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias)
+	#TODO: Transformer MNIST Sparse - Add -tf-sparse suffix to distinguish sparse transformer version
+	model_name = 'prednet-tf-sparse-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias)
 else:
 	channels_str = '_'.join([str(x) for x in A_channels])
-	model_name = 'prednet-tf-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
+	model_name = 'prednet-tf-sparse-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
 
 print('Model: ' + model_name)
 
@@ -179,6 +180,11 @@ for epoch in range(num_epochs):
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
 
+#TODO: Transformer MNIST Sparse - Display final alpha_E0 value after training
+alpha_e0 = torch.sigmoid(getattr(model, 'alpha_E0')).item()
+print(f'\nFinal alpha_E0 (E layer fusion weight): {alpha_e0:.6f}')
+print(f'  (0.0 = 100% original E, 1.0 = 100% transformer E)')
+
 #TODO: Moving MNIST - save loss history to json in data_compare/loss_history
 data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
 os.makedirs(data_compare_dir, exist_ok=True)
@@ -187,3 +193,11 @@ loss_history_path = os.path.join(data_compare_dir, loss_history_file)
 with open(loss_history_path, 'w') as f:
 	json.dump(loss_history, f, indent=2)
 print(f'Loss history saved to {loss_history_path}')
+
+#TODO: Transformer MNIST Sparse - Save alpha_E0 fusion weight to separate json file
+alpha_file = 'transformer_mnist-' + model_name + '-alpha_E0.json'
+alpha_path = os.path.join(data_compare_dir, alpha_file)
+alpha_data = {'alpha_E0': alpha_e0, 'description': '0.0=pure original E, 1.0=pure transformer E'}
+with open(alpha_path, 'w') as f:
+	json.dump(alpha_data, f, indent=2)
+print(f'Alpha_E0 saved to {alpha_path}')
