@@ -24,7 +24,8 @@ class TransformerBlock(nn.Module):
         
         self.input_dim = input_dim
         self.num_heads = num_heads
-        self.ff_dim = ff_dim if ff_dim is not None else 4 * input_dim
+        #TODO: Transformer Block - Reduced FeedForward dimension from 4x to 2x to save memory
+        self.ff_dim = ff_dim if ff_dim is not None else 2 * input_dim
         
         # Ensure input_dim is divisible by num_heads
         assert input_dim % num_heads == 0, f"input_dim ({input_dim}) must be divisible by num_heads ({num_heads})"
