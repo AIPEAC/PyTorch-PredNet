@@ -133,7 +133,19 @@ def lr_scheduler(optimizer, epoch):
 		return optimizer
 
 min_val_loss = float('inf')
-loss_history = []  # #TODO: Moving MNIST - save loss for plotting
+
+#TODO: Training Loss - Setup loss tracking file in jsonl format (append mode to reduce memory)
+loss_history_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
+os.makedirs(loss_history_dir, exist_ok=True)
+if using_default_channels:
+	loss_history_file = 'transformer_mnist-' + 'prednet-tf-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias) + '-loss_history.jsonl'
+else:
+	channels_str = '_'.join([str(x) for x in A_channels])
+	loss_history_file = 'transformer_mnist-' + 'prednet-tf-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str) + '-loss_history.jsonl'
+loss_history_path = os.path.join(loss_history_dir, loss_history_file)
+if os.path.exists(loss_history_path):
+	os.remove(loss_history_path)  # Clear previous run
+print(f'Loss history will be saved to: {loss_history_path}')
 
 #TODO: Transformer MNIST - Setup parameter tracking file in history directory (jsonl format)
 history_dir = os.path.join(os.path.dirname(__file__), 'history')
@@ -210,8 +222,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
-	#TODO: Moving MNIST - save epoch loss to history
-	loss_history.append({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss})
+	#TODO: Training Loss - Append epoch loss to jsonl file directly to reduce memory
+	with open(loss_history_path, 'a') as f:
+		f.write(json.dumps({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss}) + '\n')
 	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
@@ -223,12 +236,6 @@ for epoch in range(num_epochs):
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
 
-#TODO: Moving MNIST - save loss history to json in data_compare/loss_history
-data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
-os.makedirs(data_compare_dir, exist_ok=True)
-loss_history_file = 'transformer_mnist-' + model_name + '-loss_history.json'
-loss_history_path = os.path.join(data_compare_dir, loss_history_file)
-with open(loss_history_path, 'w') as f:
-	json.dump(loss_history, f, indent=2)
+#TODO: Training Loss - Loss history already saved line-by-line during training
 print(f'Loss history saved to {loss_history_path}')
 print(f'Parameter history jsonl saved to {param_file}')

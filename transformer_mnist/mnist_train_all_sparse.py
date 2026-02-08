@@ -1,6 +1,11 @@
 from __future__ import print_function
 import os
 import json
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -54,6 +59,57 @@ def record_parameters_to_file(model, epoch, step, batch_idx, param_file):
 	# Append to file (line by line, not accumulating in memory)
 	with open(param_file, 'a') as f:
 		f.write(json.dumps(param_record) + '\n')
+
+#TODO: Transformer MNIST Sparse Training - Function to save batch prediction visualization every 100 batches
+def save_batch_prediction(vis_model, inputs, epoch, step, history_dir, model_name, nt):
+	"""Save prediction visualization for first sequence in batch every 100 steps"""
+	with torch.no_grad():
+		vis_model.eval()
+		pred = vis_model(inputs)  # (batch_size, channels, width, height, nt)
+		vis_model.train()  # Switch back to train mode
+	
+	pred = pred.cpu()
+	pred = pred.permute(0, 4, 1, 2, 3)  # (batch_size, nt, channels, width, height)
+	
+	# Convert inputs to predictions format (same shape as pred)
+	inputs_vis = inputs.cpu()
+	inputs_vis = inputs_vis.permute(0, 2, 1, 3, 4)  # (batch_size, channels, nt, width, height)
+	inputs_vis = inputs_vis.permute(0, 2, 1, 3, 4)  # Back to (batch_size, nt, channels, width, height)
+	
+	# Only visualize first sequence in batch
+	targets = inputs_vis[0] * 255.  # Use first frame as reference
+	pred = pred[0] * 255.
+	
+	targets = np.transpose(targets.detach().numpy(), (0, 2, 3, 1))
+	pred = np.transpose(pred.detach().numpy(), (0, 2, 3, 1))
+	
+	targets = targets.astype(int)
+	pred = pred.astype(int)
+	
+	#TODO: Transformer MNIST Sparse Training - Reduce figsize to minimize whitespace
+	fig = plt.figure(figsize=(nt*0.25, 1.2))
+	gs = gridspec.GridSpec(2, nt)
+	gs.update(wspace=0.01, hspace=0.05)
+	
+	for t in range(nt):
+		plt.subplot(gs[t])
+		plt.imshow(targets[t], interpolation='none', cmap='gray')
+		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+		if t==0: plt.ylabel('Input', fontsize=10)
+		
+		plt.subplot(gs[t + nt])
+		plt.imshow(pred[t], interpolation='none', cmap='gray')
+		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+		if t==0: plt.ylabel('Predicted', fontsize=10)
+	
+	img_filename = f'{model_name}-epoch{epoch:02d}-step{step:05d}'
+	pred_plot_dir = os.path.join(history_dir, 'prediction_plots')
+	os.makedirs(pred_plot_dir, exist_ok=True)
+	img_path = os.path.join(pred_plot_dir, img_filename + '.png')
+	
+	plt.savefig(img_path, dpi=80, bbox_inches='tight')
+	plt.close()
+	print(f'Prediction saved: {img_path}')
 
 
 # Training parameters
@@ -109,10 +165,17 @@ model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_
 				#TODO: Transformer MNIST Sparse - Enable sparse transformer (every 3 timesteps) for Layer 0 E
 				use_transformer=True, num_transformer_heads=4)
 
+#TODO: Transformer MNIST Sparse Training - Create visualization model for prediction during training
+vis_model = PredNet(input_size, R_channels, A_channels, output_mode='prediction', gating_mode=gating_mode,
+				peephole=peephole, lstm_tied_bias=lstm_tied_bias,
+				extrap_start_time=10, use_transformer=True, num_transformer_heads=4)
+
 if torch.cuda.is_available():
 	print('Using GPU.')
 	model.cuda()
+	vis_model.cuda()
 model.apply(init_weights)
+vis_model.apply(init_weights)
 
 if using_default_channels:
 	#TODO: Transformer MNIST Sparse - Add -tf-sparse suffix to distinguish sparse transformer version
@@ -135,7 +198,19 @@ def lr_scheduler(optimizer, epoch):
 		return optimizer
 
 min_val_loss = float('inf')
-loss_history = []  # #TODO: Moving MNIST - save loss for plotting
+
+#TODO: Training Loss - Setup loss tracking file in jsonl format (append mode to reduce memory)
+loss_history_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
+os.makedirs(loss_history_dir, exist_ok=True)
+if using_default_channels:
+	loss_history_file = 'transformer_mnist-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias) + '-loss_history.jsonl'
+else:
+	channels_str = '_'.join([str(x) for x in A_channels])
+	loss_history_file = 'transformer_mnist-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str) + '-loss_history.jsonl'
+loss_history_path = os.path.join(loss_history_dir, loss_history_file)
+if os.path.exists(loss_history_path):
+	os.remove(loss_history_path)  # Clear previous run
+print(f'Loss history will be saved to: {loss_history_path}')
 
 #TODO: Transformer MNIST Sparse - Setup parameter tracking file in history directory (jsonl format)
 history_dir = os.path.join(os.path.dirname(__file__), 'history')
@@ -188,6 +263,12 @@ for epoch in range(num_epochs):
 			print('step: {}/{}, loss: {:.6f}'.format(step, num_train_steps, loss))
 		#TODO: Transformer MNIST Sparse - Record all parameters after each batch to avoid memory accumulation
 		record_parameters_to_file(model, epoch+1, step, step // batch_size, param_file)
+		
+		#TODO: Transformer MNIST Sparse Training - Save prediction visualization every 100 batches
+		if step % 100 == 0:
+			# Share weights from training model to visualization model
+			vis_model.load_state_dict(model.state_dict())
+			save_batch_prediction(vis_model, inputs, epoch+1, step, history_dir, model_name, nt)
 
 	train_loss /= len(mnist_train)
 	print('Epoch: {}/{}, loss: {:.6f}'.format(epoch+1, num_epochs, train_loss)) 
@@ -212,8 +293,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
-	#TODO: Moving MNIST - save epoch loss to history
-	loss_history.append({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss})
+	#TODO: Training Loss - Append epoch loss to jsonl file directly to reduce memory
+	with open(loss_history_path, 'a') as f:
+		f.write(json.dumps({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss}) + '\n')
 	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
@@ -230,18 +312,13 @@ alpha_e0 = torch.sigmoid(getattr(model, 'alpha_E0')).item()
 print(f'\nFinal alpha_E0 (E layer fusion weight): {alpha_e0:.6f}')
 print(f'  (0.0 = 100% original E, 1.0 = 100% transformer E)')
 
-#TODO: Moving MNIST - save loss history to json in data_compare/loss_history
-data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
-os.makedirs(data_compare_dir, exist_ok=True)
-loss_history_file = 'transformer_mnist-' + model_name + '-loss_history.json'
-loss_history_path = os.path.join(data_compare_dir, loss_history_file)
-with open(loss_history_path, 'w') as f:
-	json.dump(loss_history, f, indent=2)
+#TODO: Training Loss - Loss history already saved line-by-line during training
 print(f'Loss history saved to {loss_history_path}')
 
 #TODO: Transformer MNIST Sparse - Save alpha_E0 fusion weight to separate json file
 alpha_file = 'transformer_mnist-' + model_name + '-alpha_E0.json'
-alpha_path = os.path.join(data_compare_dir, alpha_file)
+alpha_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history', alpha_file)
+os.makedirs(os.path.dirname(alpha_path), exist_ok=True)
 alpha_data = {'alpha_E0': alpha_e0, 'description': '0.0=pure original E, 1.0=pure transformer E'}
 with open(alpha_path, 'w') as f:
 	json.dump(alpha_data, f, indent=2)
