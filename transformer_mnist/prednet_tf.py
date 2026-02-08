@@ -123,17 +123,20 @@ class PredNet(nn.Module):
 			for l in range(self.n_layers):
 				# E layer: 2 * a_channels[l] channels
 				e_dim = 2 * self.a_channels[l]
-				e_transformer = TransformerBlock(e_dim, num_heads=min(num_transformer_heads, e_dim))
+				e_heads = self._get_valid_num_heads(e_dim, num_transformer_heads)
+				e_transformer = TransformerBlock(e_dim, num_heads=e_heads)
 				setattr(self, 'transformer_E{}'.format(l), e_transformer)
 
 				# R layer: r_channels[l] channels
 				r_dim = self.r_channels[l]
-				r_transformer = TransformerBlock(r_dim, num_heads=min(num_transformer_heads, r_dim))
+				r_heads = self._get_valid_num_heads(r_dim, num_transformer_heads)
+				r_transformer = TransformerBlock(r_dim, num_heads=r_heads)
 				setattr(self, 'transformer_R{}'.format(l), r_transformer)
 
 				# Ahat layer: a_channels[l] channels
 				ahat_dim = self.a_channels[l]
-				ahat_transformer = TransformerBlock(ahat_dim, num_heads=min(num_transformer_heads, ahat_dim))
+				ahat_heads = self._get_valid_num_heads(ahat_dim, num_transformer_heads)
+				ahat_transformer = TransformerBlock(ahat_dim, num_heads=ahat_heads)
 				setattr(self, 'transformer_Ahat{}'.format(l), ahat_transformer)
 
 			# #TODO: PredNet Transformer - Learnable fusion weights alpha per layer and per component
@@ -143,6 +146,31 @@ class PredNet(nn.Module):
 				setattr(self, 'alpha_R{}'.format(l), nn.Parameter(torch.tensor(0.5)))
 				setattr(self, 'alpha_Ahat{}'.format(l), nn.Parameter(torch.tensor(0.5)))
 	
+	def _get_valid_num_heads(self, input_dim, num_heads):
+		"""
+		Helper function to find the largest num_heads that divides input_dim.
+		
+		Arguments:
+		-----------
+		input_dim: int
+			Input dimension for transformer
+		num_heads: int
+			Desired number of heads
+		
+		Returns:
+		--------
+		valid_num_heads: int
+			The largest num_heads <= desired num_heads that divides input_dim
+		"""
+		# #TODO: PredNet Transformer - Find valid num_heads that divides input_dim
+		if input_dim % num_heads == 0:
+			return num_heads
+		# Find largest divisor of input_dim that is <= num_heads
+		for heads in range(min(num_heads, input_dim), 0, -1):
+			if input_dim % heads == 0:
+				return heads
+		return 1
+
 	def set_output_mode(self, output_mode):
 		"""
 		set_output_mode:
