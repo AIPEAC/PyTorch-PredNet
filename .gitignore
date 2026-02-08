@@ -16,6 +16,8 @@ X_test.hkl
 X_train.hkl
 X_val.hkl
 
+# training scripts
+*.bat
 
 # original Kitti stuffs
 raw/
