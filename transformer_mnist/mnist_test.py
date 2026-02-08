@@ -16,7 +16,7 @@ import numpy as np
 from mnist_data import MNIST
 #TODO: MNIST - import from mnist_settings
 from mnist_settings import *
-from prednet_x import PredNet 
+from prednet_tf import PredNet 
 
 # Visualization parameters
 n_plot = 4 # number of plot to make (must be <= batch_size)
