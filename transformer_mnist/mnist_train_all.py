@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 
 from mnist_data import MNIST
 from mnist_settings import *
-from prednet_x import PredNet
+#TODO: Transformer MNIST - Import Transformer-enabled PredNet
+from prednet_tf import PredNet
 
 def init_weights(m):
 	""""
@@ -74,7 +75,9 @@ train_loader = DataLoader(mnist_train, batch_size=batch_size, shuffle=True, num_
 val_loader = DataLoader(mnist_val, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=False)
 
 model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_mode=gating_mode,
-				peephole=peephole, lstm_tied_bias=lstm_tied_bias)
+				peephole=peephole, lstm_tied_bias=lstm_tied_bias,
+				#TODO: Transformer MNIST - Enable transformer fusion
+				use_transformer=True, num_transformer_heads=4)
 
 if torch.cuda.is_available():
 	print('Using GPU.')
@@ -82,10 +85,11 @@ if torch.cuda.is_available():
 model.apply(init_weights)
 
 if using_default_channels:
-	model_name = 'prednet-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias)
+	#TODO: Transformer MNIST - Add -tf suffix to distinguish transformer version
+	model_name = 'prednet-tf-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias)
 else:
 	channels_str = '_'.join([str(x) for x in A_channels])
-	model_name = 'prednet-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
+	model_name = 'prednet-tf-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str)
 
 print('Model: ' + model_name)
 

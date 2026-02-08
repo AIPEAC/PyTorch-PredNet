@@ -27,7 +27,7 @@ def init_weights(m):
 			nn.init.zeros_(m.bias)
 
 # Training parameters
-num_epochs = 150
+num_epochs = 40 #TODO: MNIST - keep 40 epochs as in original PredNet paper
 batch_size = 4 # 16
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
