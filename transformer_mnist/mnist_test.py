@@ -19,34 +19,33 @@ from prednet_x import PredNet
 
 # Visualization parameters
 n_plot = 4 # number of plot to make (must be <= batch_size)
-#TODO: MNIST - changed to mnist_raw_data directory
-DATA_DIR = 'mnist_raw_data'
-
+#TODO: MNIST - import from mnist_settings for DATA_DIR
+from mnist_settings import DATA_DIR
 
 # Model parameters
 gating_mode = 'mul'
 peephole = False
 lstm_tied_bias = False
-nt = 10  # TODO: change the number of time
+nt = 20  # #TODO: Moving MNIST - changed to match training (was 10)
 extrap_start_time = 10  #TODO: Moving MNIST - frames 0-9 use real data, frames 10-19 are autoregressive predictions
 batch_size = 4
 
 #TODO: MNIST - changed from (3, 48, 96, 192) to match single grayscale channel input
-default_channels = (1, 48, 96, 192)
-#TODO: MNIST - updated channel configuration for 1-channel grayscale
-channel_six_layers = (1, 48, 96, 192, 384, 768)
-#TODO: MNIST - changed A_channels from 3 to 1 for grayscale images
-A_channels = (1, 48, 96, 192)
-#TODO: MNIST - changed R_channels from 3 to 1 for grayscale images
-R_channels = (1, 48, 96, 192)
+default_channels = (3, 48, 96, 192)
+#TODO: MNIST - updated channel configuration for 3-channel RGB
+channel_six_layers = (3, 48, 96, 192, 384, 768)
+#TODO: MNIST - changed A_channels from 1 to 3 for RGB images
+A_channels = (3, 48, 96, 192)
+#TODO: MNIST - changed R_channels from 1 to 3 for RGB images
+R_channels = (3, 48, 96, 192)
 using_default_channels = A_channels == default_channels
 num_layers = len(A_channels)
 
 test_file = os.path.join(DATA_DIR, 'X_test.hkl')
 #TODO: MNIST - removed test_sources, no source tracking needed
 
-MODEL_DIR = 'models/'
-model_name = 'model1'  # TODO: Change the model to other models
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+model_name = 'prednet-L_all-mul-peepFalse-tbiasFalse-best'  # #TODO: Change the model to other models
 model_file = os.path.join(MODEL_DIR, model_name + '.pt')
 
 RESULTS_SAVE_DIR = './'
