@@ -15,6 +15,14 @@ def find_loss_files(source_prefix='', suffix=''):
     files = glob.glob(pattern)
     if files:
         return files[0]
+    
+    # Fallback: support legacy file names without source prefix
+    if not source_prefix:
+        pattern = f'*-loss_history{suffix}.json'
+        files = glob.glob(pattern)
+        if files:
+            return files[0]
+    
     return None
 
 def plot_comparison():
@@ -155,6 +163,12 @@ def plot_comparison():
     
     if not (original_all or original_train or transformer_all or transformer_train):
         print("Error: No loss history files found!")
+        print("\nTo generate loss history files, run:")
+        print("  - original_mnist/mnist_train_all.py  (generates original_mnist-*-loss_history.json)")
+        print("  - transformer_mnist/mnist_train_all.py (generates transformer_mnist-*-loss_history.json)")
+        print("\nSupported file formats:")
+        print("  - New format: {source}-prednet-*-loss_history.json (source = original_mnist or transformer_mnist)")
+        print("  - Legacy format: prednet-*-loss_history.json")
         return
     
     print("\nDone!")
