@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from mnist_data import MNIST
 from mnist_settings import *
-from prednet_x import PredNet
+from prednet_tf import PredNet
 
 def init_weights(m):
 	""""
@@ -28,7 +28,7 @@ def init_weights(m):
 
 # Training parameters
 num_epochs = 40 #TODO: MNIST - keep 40 epochs as in original PredNet paper
-batch_size = 4 # 16
+batch_size = 8 # 8
 lr = 0.001 # if epoch < 75 else 0.0001
 nt = 20 # num of time steps #TODO: Moving MNIST - changed from 10 to 20 frames
 n_train_seq = 7000 #TODO: Moving MNIST - use entire training set (7000 sequences) per epoch
