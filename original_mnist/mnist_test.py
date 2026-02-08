@@ -74,7 +74,9 @@ sequence_mses = []  # #TODO: Moving MNIST - record per-sequence MSE
 seq_idx = 0
 for step, (inputs, targets) in enumerate(test_loader):
 	# ---------------------------- Test Loop -----------------------------
-	# print(f"inputs {inputs.shape}")
+	# #TODO: MNIST Test - Simple progress output
+	if (step + 1) % 50 == 0:
+		print(f'Progress: {(step + 1) * batch_size}/1000')
 	inputs = inputs.cuda() # batch x time_steps x channel x width x height
 	
 	targets = targets
