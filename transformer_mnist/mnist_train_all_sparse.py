@@ -173,7 +173,7 @@ model = PredNet(input_size, R_channels, A_channels, output_mode='error', gating_
 #TODO: Transformer MNIST Sparse Training - Create visualization model for prediction during training
 vis_model = PredNet(input_size, R_channels, A_channels, output_mode='prediction', gating_mode=gating_mode,
 				peephole=peephole, lstm_tied_bias=lstm_tied_bias,
-				extrap_start_time=10, use_transformer=True, num_transformer_heads=4)
+			use_transformer=True, num_transformer_heads=4)
 
 if torch.cuda.is_available():
 	print('Using GPU.')
