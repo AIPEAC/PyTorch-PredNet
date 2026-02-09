@@ -89,11 +89,11 @@ class TransformerBlock(nn.Module):
 
         pe_y = torch.zeros(h, d_y)
         pe_y[:, 0::2] = torch.sin(y_pos * div_term_y)
-        pe_y[:, 1::2] = torch.cos(y_pos * div_term_y)
+        pe_y[:, 1::2] = torch.cos(y_pos * div_term_y[:d_y//2])
 
         pe_x = torch.zeros(w, d_x)
         pe_x[:, 0::2] = torch.sin(x_pos * div_term_x)
-        pe_x[:, 1::2] = torch.cos(x_pos * div_term_x)
+        pe_x[:, 1::2] = torch.cos(x_pos * div_term_x[:d_x//2])
 
         # Broadcast to grid
         pe_y = pe_y.unsqueeze(1).repeat(1, w, 1).view(h * w, d_y)
@@ -109,7 +109,7 @@ class TransformerBlock(nn.Module):
         result[i, j] ~ -distance(i, j)^2
         """
         # Grid coordinates
-        y, x = torch.meshgrid(torch.arange(h), torch.arange(w), indexing='ij')
+        y, x = torch.meshgrid(torch.arange(h), torch.arange(w))
         coords = torch.stack([y.flatten(), x.flatten()], dim=1).float()
         
         # Pairwise squared Euclidean distance
