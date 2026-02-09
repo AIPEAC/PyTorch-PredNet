@@ -3498,3 +3498,4 @@
 {"epoch": 1, "step": 3497, "batch_loss": 0.01399141550064087}
 {"epoch": 1, "step": 3498, "batch_loss": 0.012041177600622177}
 {"epoch": 1, "step": 3499, "batch_loss": 0.009688770398497581}
+{"epoch": 1, "epoch_train_loss": 0.014555298296202506, "epoch_val_loss": 0.011434995480813085}
