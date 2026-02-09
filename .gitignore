@@ -24,7 +24,7 @@ mnist_test_50.py
 mnist_train_all_short.py
 mnist_train_all_sparse_short.py
 transformer_mnist/history/
-
+original_mnist/history/
 
 # original Kitti stuffs
 raw/

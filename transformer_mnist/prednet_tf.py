@@ -136,8 +136,8 @@ class PredNet(nn.Module):
 			# #TODO: PredNet Transformer - Learnable fusion weights alpha for E and R only (removed Ahat)
 			for l in range(self.n_layers):
 				# Independent alpha for E, R at each layer (Ahat removed as it's not used)
-				setattr(self, 'alpha_E{}'.format(l), nn.Parameter(torch.tensor(0.5)))
-				setattr(self, 'alpha_R{}'.format(l), nn.Parameter(torch.tensor(0.5)))
+				setattr(self, 'alpha_E{}'.format(l), nn.Parameter(torch.tensor(0.45)))
+				setattr(self, 'alpha_R{}'.format(l), nn.Parameter(torch.tensor(0.45)))
 	
 	def _get_valid_num_heads(self, input_dim, num_heads):
 		"""

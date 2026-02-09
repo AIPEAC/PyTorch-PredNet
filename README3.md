@@ -43,12 +43,13 @@ $$E^{\text{fused}}_{\text{Layer0},t} = \sigma(\alpha_E) \cdot \text{Transformer}
 Where:
 - σ = sigmoid activation
 - α_E = learnable fusion weight per layer
+  - α initialized with 0.45
 - Allows model to learn optimal balance between original and transformer-enhanced error
 
 ### Feedback Path
 Fused E is used:
-1. **Next layer calculation**: A_{Layer1,t} = update_A(E_fused_{Layer0,t})
-2. **Next timestep**: As E_prev in ConvLSTM for Layer 1 at t+1
+1. **Next layer calculation**: $A_{Layer1,t} = update_A(E^{fused}_{Layer0,t})$
+2. **Next timestep**: As $E_{prev}$ in ConvLSTM for Layer 1 at t+1
 
 ### Output
 - **Model file**: `prednet-tf-sparse-L_all-mul-peepFalse-tbiasFalse.pt`
