@@ -152,6 +152,10 @@ for epoch in range(num_epochs):
 
 		if step % 10 == 0:
 			print('step: {}/{}, loss: {:.6f}'.format(step, num_train_steps, loss))
+		
+		#TODO: Training Loss - Record batch loss immediately after optimizer step
+		with open(loss_history_path, 'a') as f:
+			f.write(json.dumps({'epoch': epoch+1, 'step': step, 'batch_loss': loss.item()}) + '\n')
 
 	train_loss /= len(mnist_train)
 	print('Epoch: {}/{}, loss: {:.6f}'.format(epoch+1, num_epochs, train_loss)) 
@@ -176,9 +180,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
-	#TODO: Training Loss - Append epoch loss to jsonl file directly to reduce memory
+	#TODO: Training Loss - Record epoch validation loss at end of epoch
 	with open(loss_history_path, 'a') as f:
-		f.write(json.dumps({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss}) + '\n')
+		f.write(json.dumps({'epoch': epoch+1, 'epoch_train_loss': train_loss, 'epoch_val_loss': val_loss}) + '\n')
 	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))

@@ -104,9 +104,19 @@ def lr_scheduler(optimizer, epoch):
 		return optimizer
 
 min_val_loss = float('inf')
-loss_history = []  # #TODO: Moving MNIST - save loss for plotting
 
-
+#TODO: Training Loss - Setup loss tracking file in jsonl format (append mode to reduce memory)
+loss_history_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
+os.makedirs(loss_history_dir, exist_ok=True)
+if using_default_channels:
+	loss_history_file = 'original_mnist-' + 'prednet-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias) + '-loss_history.jsonl'
+else:
+	channels_str = '_'.join([str(x) for x in A_channels])
+	loss_history_file = 'original_mnist-' + 'prednet-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str) + '-loss_history.jsonl'
+loss_history_path = os.path.join(loss_history_dir, loss_history_file)
+if os.path.exists(loss_history_path):
+	os.remove(loss_history_path)  # Clear previous run
+print(f'Loss history will be saved to: {loss_history_path}')
 
 for epoch in range(num_epochs):
 
@@ -150,6 +160,9 @@ for epoch in range(num_epochs):
 
 		if step % 10 == 0:
 			print('step: {}/{}, loss: {:.6f}'.format(step, num_train_steps, loss))
+		#TODO: Training Loss - Record batch loss immediately after optimizer step
+		with open(loss_history_path, 'a') as f:
+			f.write(json.dumps({'epoch': epoch+1, 'step': step, 'batch_loss': loss.item()}) + '\n')
 
 	train_loss /= len(mnist_train)
 	print('Epoch: {}/{}, loss: {:.6f}'.format(epoch+1, num_epochs, train_loss)) 
@@ -174,8 +187,9 @@ for epoch in range(num_epochs):
 
 	val_loss /= len(mnist_val)
 	print('Validation loss: {:.6f}'.format(val_loss))
-	#TODO: Moving MNIST - save epoch loss to history
-	loss_history.append({'epoch': epoch+1, 'train_loss': train_loss, 'val_loss': val_loss})
+	#TODO: Training Loss - Record epoch validation loss at end of epoch
+	with open(loss_history_path, 'a') as f:
+		f.write(json.dumps({'epoch': epoch+1, 'epoch_train_loss': train_loss, 'epoch_val_loss': val_loss}) + '\n')
 	
 	if val_loss < min_val_loss:
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
@@ -187,11 +201,5 @@ for epoch in range(num_epochs):
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
 
-#TODO: Moving MNIST - save loss history to json in data_compare/loss_history
-data_compare_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
-os.makedirs(data_compare_dir, exist_ok=True)
-loss_history_file = 'original_mnist-' + model_name + '-loss_history-train.json'
-loss_history_path = os.path.join(data_compare_dir, loss_history_file)
-with open(loss_history_path, 'w') as f:
-	json.dump(loss_history, f, indent=2)
+#TODO: Training Loss - Loss history already saved line-by-line during training
 print(f'Loss history saved to {loss_history_path}')
