@@ -1,63 +1,45 @@
-# PredNet-Transformer Sparse Version
-PredNet with sparse Transformer integration, implemented in PyTorch.
+# Transformer Enhanced MNIST Project
 
-## Setup
-### Download FFmpeg
+Based on the original PredNet Pytorch implementation and the Transformer MNIST project.
+This version enhances the Transformer module by adding "Spatial Awareness".
 
-- Download [ffmpeg](https://ffmpeg.org/download.html). Unzip the file to a folder and add ffmpeg to system PATH
-	- [Windows download](https://www.gyan.dev/ffmpeg/builds/)
+## Improvement: Spatial Awareness & Positional Encoding
 
-### Download Moving MNIST
+**The Problem:**
+In the original Transformer implementation (`transformer_mnist`), the 2D feature maps from PredNet were simply flattened into a 1D sequence before being fed into the Transformer.
+Since Transformers are naturally permutation-invariant (they don't know the order of elements), the model lost all spatial context. It couldn't distinguish between a pixel at (0,0) and a pixel at (10,10). The spatial structure crucial for image prediction was destroyed, causing the model to down-weight the Transformer output (alpha -> 0).
 
-- Download [MNIST](https://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy). Put it in `/mnist_npy_data`. Run [process_mnist.py](mnist_npy_data/process_mnist.py) to create hickle files for subsequent testing.
+**The Solution (`transformer_mnist_enhanced`):**
+We introduced two mechanisms to restore spatial sense:
 
-## Training Configuration
-- **Total epochs**: 1 (single epoch for testing)
-- **Batch size**: 2 (reduced from 8 for GPU memory efficiency)
-- **Learning rate**: 0.001
-- **Timesteps per sequence**: 20 frames
-- **Data**: Standard Moving MNIST, 10000 sequences (7000 train, 1000 validation, 2000 test)
+1.  **2D Sinusoidal Positional Encoding**: 
+    -   We inject a fixed position signature into each pixel's feature vector.
+    -   Pixel $(x, y)$ gets a unique embedding vector $P_{(x,y)}$.
+    -   This allows the Transformer to mathematically distinguish relative and absolute positions. 
+    -   *Analogy*: We gave the "blind" Transformer a map of the classroom, so it knows who sits next to whom.
 
-## Transformer Configuration (Sparse)
-- **Transformer Component**: Only Layer 0 E (error) enhanced with Transformer
-- **Application Frequency**: Every 3 timesteps (t=0, 3, 6, 9, ...) → ~7 transformer operations per 20-step sequence
-- **Memory Optimization**:
-  - FeedForward dimension: 2× input_dim (vs 4× standard)
-  - Layer 0 E spatial size: 64×64 (4096 tokens)
-- **Architecture**: 
-  - Single TransformerBlock per Layer 0 E
-  - 6 attention heads (divisor of 6-channel E at Layer 0)
+2.  **Distance-based Attention Bias (The "Square Function"):**
+    -   As requested, we added a penalty term to the Attention mechanism based on physical distance.
+    -   $\text{Mask}[i, j] \propto - \frac{\text{Distance}(i, j)^2}{\sigma^2}$
+    -   This forces the attention mechanism to prioritize "nearby" pixels (tight connection) and exponentially decay the connection strength for distant pixels.
+    -   *Analogy*: We made the "voice" of distant students softer, so pixels mostly listen to their neighbors, preserving the local structure that PredNet loves.
 
-## Sparse Transformer Integration
+## How to Run
 
-### Design Rationale
-- **Why Layer 0 E only**: Reduces transformer computation from 12 blocks (full) to 1 block (sparse)
-- **Why every 3 timesteps**: Further reduces from 20 to ~7 transformer applications per sequence
-- **Why 2× ff_dim**: Halves FeedForward parameter count (3,145,728 → 1,572,864 params in Layer 0 E transformer)
+Navigate to `transformer_mnist_enhanced/` and run the training script.
 
-### Fusion Mechanism
-At timesteps where transformer is applied (t % 3 == 0):
+```bash
+cd transformer_mnist_enhanced
+python mnist_train_all_sparse.py
+```
 
-$$E^{\text{fused}}_{\text{Layer0},t} = \sigma(\alpha_E) \cdot \text{Transformer}(E_{\text{Layer0},t}) + (1-\sigma(\alpha_E)) \cdot E_{\text{Layer0},t}$$
+## Files Changed from `transformer_mnist`
 
-Where:
-- σ = sigmoid activation
-- α_E = learnable fusion weight per layer
-  - α initialized with 0.45
-- Allows model to learn optimal balance between original and transformer-enhanced error
+-   **`transformer_block_tf.py`**:
+    -   Added `PositionalEncoding2D` class.
+    -   Added `_create_distance_mask` method for the "square function" decay.
+    -   Modified `forward` to add positional embeddings and apply the distance mask.
+-   **`prednet_tf_sparse.py`**:
+    -   Modified `__init__` to pass `height` and `width` to `TransformerBlock`.
 
-### Feedback Path
-Fused E is used:
-1. **Next layer calculation**: $A_{Layer1,t} = update_A(E^{fused}_{Layer0,t})$
-2. **Next timestep**: As $E_{prev}$ in ConvLSTM for Layer 1 at t+1
-
-### Output
-- **Model file**: `prednet-tf-sparse-L_all-mul-peepFalse-tbiasFalse.pt`
-- **Best model**: `prednet-tf-sparse-L_all-mul-peepFalse-tbiasFalse-best.pt`
-- **Loss history**: `data_compare/loss_history/transformer_mnist-prednet-tf-sparse-...-loss_history.json`
-- **Fusion weight**: `data_compare/loss_history/transformer_mnist-prednet-tf-sparse-...-alpha_E0.json`
-
-## Performance Notes
-- **Memory footprint**: ~25% of full transformer version due to sparse application and reduced batch size
-- **Computational cost**: ~40 transformer operations per epoch (vs 240 with full transformer)
-- **Training observation**: Single epoch to verify convergence and fusion weight learning (alpha_E0)
+All other files (`mnist_train_all_sparse.py`, etc.) are preserved to maintain the sparse training configuration.
