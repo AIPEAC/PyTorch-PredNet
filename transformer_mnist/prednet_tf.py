@@ -239,6 +239,9 @@ class PredNet(nn.Module):
 		R_layers = states[:self.n_layers]
 		C_layers = states[self.n_layers:2*self.n_layers]
 		E_layers = states[2*self.n_layers:3*self.n_layers]
+		
+		#TODO: PredNet Transformer - List to store raw errors for Loss calculation (preventing trivial solution)
+		E_loss_layers = [None] * self.n_layers
 
 		if self.extrap_start_time is not None:
 			t = states[-1]
