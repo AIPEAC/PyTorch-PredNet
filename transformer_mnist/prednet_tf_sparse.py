@@ -222,6 +222,9 @@ class PredNet(nn.Module):
 		R_layers = states[:self.n_layers]
 		C_layers = states[self.n_layers:2*self.n_layers]
 		E_layers = states[2*self.n_layers:3*self.n_layers]
+		
+		#TODO: PredNet Transformer Sparse - List to store raw errors for Loss calculation (preventing trivial solution)
+		E_loss_layers = [None] * self.n_layers
 
 		if self.extrap_start_time is not None:
 			t = states[-1]
@@ -253,6 +256,10 @@ class PredNet(nn.Module):
 			neg = F.relu(a - a_hat)
 			e = torch.cat([pos, neg],1)
 			
+			#TODO: PredNet Transformer Sparse - Store raw error for Loss calculation (Ground Truth for optimization)
+			# Even if 'e' is modified by Transformer for state updates, we must minimize the REAL error.
+			E_loss_layers[l] = e 
+			
 			# #TODO: PredNet Transformer Sparse - Apply transformer only to Layer 0 E and only every 3 timesteps (0,3,6,9...)
 			if self.use_transformer and l == 0 and time_step % 3 == 0:
 				transformer_E = getattr(self, 'transformer_E0')
@@ -273,7 +280,8 @@ class PredNet(nn.Module):
 				elif self.output_layer_type == 'R':
 					output = R_layers[l]
 				elif self.output_layer_type == 'E':
-					output = E_layers[l]
+					#TODO: PredNet Transformer Sparse - Return raw error for specific layer monitoring
+					output = E_loss_layers[l]
 
 			if l < self.n_layers - 1: # updating A for next layer
 				update_A = getattr(self, 'update_A{}'.format(l))
@@ -285,7 +293,9 @@ class PredNet(nn.Module):
 			else:
 				# Batch flatten (return 2D matrix) then mean over units
 				# Finally, concatenate layers (batch, n_layers)
-				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_layers], axis=1)
+				#TODO: PredNet Transformer Sparse - Use E_loss_layers (Raw Error) for Loss Output
+				# This forces the model to minimize the actual pixel difference, not the transformed(suppressed) one.
+				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_loss_layers], axis=1)
 				if self.output_mode == 'error':
 					output = mean_E_layers
 				else:
