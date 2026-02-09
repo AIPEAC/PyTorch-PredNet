@@ -241,6 +241,27 @@ for epoch in range(num_epochs):
 # Save model
 torch.save(model.state_dict(), model_name + '.pt')
 
+#TODO: Transformer MNIST - Display final alpha values after training
+print('\nFinal Fusion Weights (Alpha - E: Error, R: Representation):')
+for l in range(model.n_layers):
+	alpha_e = torch.sigmoid(getattr(model, f'alpha_E{l}')).item()
+	alpha_r = torch.sigmoid(getattr(model, f'alpha_R{l}')).item()
+	print(f'Layer {l}: alpha_E={alpha_e:.6f}, alpha_R={alpha_r:.6f}')
+print(f'  (0.0 = 100% original, 1.0 = 100% transformer)')
+
 #TODO: Training Loss - Loss history already saved line-by-line during training
 print(f'Loss history saved to {loss_history_path}')
+
+#TODO: Transformer MNIST - Save alpha fusion weights to separate json file
+alpha_file = 'transformer_mnist-' + model_name + '-alpha_values.json'
+alpha_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history', alpha_file)
+os.makedirs(os.path.dirname(alpha_path), exist_ok=True)
+alpha_data = {'description': '0.0=pure original, 1.0=pure transformer'}
+for l in range(model.n_layers):
+	alpha_data[f'alpha_E{l}'] = torch.sigmoid(getattr(model, f'alpha_E{l}')).item()
+	alpha_data[f'alpha_R{l}'] = torch.sigmoid(getattr(model, f'alpha_R{l}')).item()
+
+with open(alpha_path, 'w') as f:
+	json.dump(alpha_data, f, indent=2)
+print(f'Alpha values saved to {alpha_path}')
 print(f'Parameter history jsonl saved to {param_file}')

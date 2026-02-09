@@ -273,6 +273,10 @@ class PredNet(nn.Module):
 			neg = F.relu(a - a_hat)
 			e = torch.cat([pos, neg],1)
 			
+			#TODO: PredNet Transformer - Store raw error for Loss calculation (Ground Truth for optimization)
+			# Even if 'e' is modified by Transformer for state updates, we must minimize the REAL error.
+			E_loss_layers[l] = e
+			
 			# #TODO: PredNet Transformer - Apply transformer and fusion for E and R only (Ahat removed)
 			if self.use_transformer:
 				transformer_E = getattr(self, 'transformer_E{}'.format(l))
@@ -300,7 +304,8 @@ class PredNet(nn.Module):
 				elif self.output_layer_type == 'R':
 					output = R_layers[l]
 				elif self.output_layer_type == 'E':
-					output = E_layers[l]
+					#TODO: PredNet Transformer - Return raw error for specific layer monitoring
+					output = E_loss_layers[l]
 
 			if l < self.n_layers - 1: # updating A for next layer
 				update_A = getattr(self, 'update_A{}'.format(l))
@@ -313,7 +318,9 @@ class PredNet(nn.Module):
 				# Batch flatten (return 2D matrix) then mean over units
 				# Finally, concatenate layers (batch, n_layers)
 				#TODO: PredNet Transformer - Use reshape instead of view for non-contiguous tensors
-				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_layers], axis=1)
+				#TODO: PredNet Transformer - Use E_loss_layers (Raw Error) for Loss Output
+				# This forces the model to minimize the actual pixel difference, not the transformed(suppressed) one.
+				mean_E_layers = torch.cat([torch.mean(e.reshape(batch_size, -1), axis=1, keepdim=True) for e in E_loss_layers], axis=1)
 				if self.output_mode == 'error':
 					output = mean_E_layers
 				else:
