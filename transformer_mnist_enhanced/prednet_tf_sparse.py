@@ -122,7 +122,7 @@ class PredNet(nn.Module):
 			setattr(self, 'transformer_E0', e_transformer)
 
 			# #TODO: PredNet Transformer Sparse - Learnable fusion weight alpha for Layer 0 E
-			setattr(self, 'alpha_E0', nn.Parameter(torch.tensor(0.3)))
+			setattr(self, 'alpha_E0', nn.Parameter(torch.tensor(0.1)))
 	
 	def _get_valid_num_heads(self, input_dim, num_heads):
 		"""
