@@ -208,10 +208,10 @@ min_val_loss = float('inf')
 loss_history_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history')
 os.makedirs(loss_history_dir, exist_ok=True)
 if using_default_channels:
-	loss_history_file = 'transformer_mnist-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias) + '-loss_history.jsonl'
+	loss_history_file = 'transformer_mnist_enhanced-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias) + '-loss_history.jsonl'
 else:
 	channels_str = '_'.join([str(x) for x in A_channels])
-	loss_history_file = 'transformer_mnist-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str) + '-loss_history.jsonl'
+	loss_history_file = 'transformer_mnist_enhanced-' + 'prednet-tf-sparse-{}-{}-peep{}-tbias{}-chans_{}'.format(loss_mode, gating_mode, peephole, lstm_tied_bias, channels_str) + '-loss_history.jsonl'
 loss_history_path = os.path.join(loss_history_dir, loss_history_file)
 if os.path.exists(loss_history_path):
 	os.remove(loss_history_path)  # Clear previous run
@@ -326,7 +326,7 @@ print(f'  (0.0 = 100% original E, 1.0 = 100% transformer E)')
 print(f'Loss history saved to {loss_history_path}')
 
 #TODO: Transformer MNIST Sparse - Save alpha_E0 fusion weight to separate json file
-alpha_file = 'transformer_mnist-' + model_name + '-alpha_E0.json'
+alpha_file = 'transformer_mnist_enhanced-' + model_name + '-alpha_E0.json'
 alpha_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data_compare', 'loss_history', alpha_file)
 os.makedirs(os.path.dirname(alpha_path), exist_ok=True)
 alpha_data = {'alpha_E0': alpha_e0, 'description': '0.0=pure original E, 1.0=pure transformer E'}
