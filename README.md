@@ -1,56 +1,72 @@
-**Pytorch** implementation of PredNet.
-### Original Repository
+# PredNet PyTorch Implementation
 
-This repo was first created by [leido](https://github.com/leido/pytorch-prednet) and was a helpful starting point.  My implementation fixes the known issues of the leido's code such as blurry, black-and-white predictions.
+## References
+- Paper: [Deep Predictive Coding Networks for Video Prediction and Unsupervised Learning](https://arxiv.org/abs/1605.08104)
+- Original Keras code: [coxlab/prednet](https://github.com/coxlab/prednet)
+- Original PyTorch code: [leido/pytorch-prednet](https://github.com/leido/pytorch-prednet)
 
-Here's an example plot generating using [prednet_relu_bug](prednet_relu_bug.py) with default hyperparameters:
+---
 
-![](example_plot.png)
+## Original Implementation (KITTI Dataset)
 
-This implementation includes features not present in the [original code](https://github.com/coxlab/prednet) such as the ability to toggle on peephole connections, between tied and untied bias weights, and between multiplicative and subtractive gating as developed by [Costa et al](https://papers.nips.cc/paper/2017/file/45fbc6d3e05ebd93369ce542e8f2322d-Paper.pdf).
+### Directory: original_mnist/
 
-### Details
-"Deep Predictive Coding Networks for Video Prediction and Unsupervised Learning"(https://arxiv.org/abs/1605.08104)
+#### Training
+- File: [mnist_train_all.py](original_mnist/mnist_train_all.py)
+- Parameters:
+  - num_epochs: 150
+  - batch_size: 4
+  - lr: 0.001
+  - nt: 10 (sequence length)
+  - n_train_seq: 500
+  - n_val_seq: 100
 
-The PredNet is a deep recurrent convolutional neural network that is inspired by the neuroscience concept of predictive coding (Rao and Ballard, 1999; Friston, 2005)
+#### Model Hyperparameters
+- loss_mode: 'L_0' or 'L_all' (default: 'L_0')
+- peephole: False
+- lstm_tied_bias: False
+- gating_mode: 'mul' or 'sub' (default: 'mul')
+- A_channels & R_channels: (3, 48, 96, 192)
 
-Original paper's [code](https://github.com/coxlab/prednet) is writen in Keras. Examples and project website can be found [here](https://coxlab.github.io/prednet/).
+#### Output
+- Best model: [models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](original_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
+- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](original_mnist/history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl)
 
+---
 
-In leido's code, ConvLSTMCell is borrowed from [here](https://gist.github.com/Kaixhin/57901e91e5c5a8bac3eb0cbbdd3aba81).
+## Transformer Sparse Version (Moving MNIST)
 
-However, we significantly revamped this module with a proper implementation of peephole connections, gating options, and a more readable style.
+### Directory: 	transformer_mnist/
 
+#### Setup Requirements
+1. FFmpeg: [Download](https://www.gyan.dev/ffmpeg/builds/) and add to system PATH
+2. Moving MNIST: [Download dataset](https://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy), place in /mnist_npy_data, run [process_mnist.py](mnist_npy_data/process_mnist.py)
 
-### Training, Validation, and Testing
+#### Training Configuration
+- File: [mnist_train_all_sparse.py](transformer_mnist/mnist_train_all_sparse.py)
+- Epochs: 1
+- Batch size: 2
+- Learning rate: 0.001
+- Timesteps per sequence: 20 frames
+- Dataset: Moving MNIST (7000 train, 1000 validation, 2000 test)
 
-Training a prednet model is done via [kitti_train.py](kitti_train.py).  Feel free to adjust the following training and model hyperparamters within the script:  
+#### Transformer Configuration (Sparse)
+- Component: Layer 0 E (error) with Transformer enhancement
+- Application frequency: Every 3 timesteps (t=0, 3, 6, 9, ...)
+- Transformer operations per sequence: ~7 per 20-step sequence
+- FeedForward dimension: 2× input_dim
+- Architecture: Single TransformerBlock per Layer 0 E
+- Attention heads: 6
+- Layer 0 E spatial size: 64×64 (4096 tokens)
 
-#### Training parameters
-- **num\_epochs**: default- 150
-- **batch\_size**: default- 4
-- **lr**: learning rate, default- 0.001
-- **nt**: length of video sequences, default- 10
-- **n\_train\_seq**: number of video sequences per training epoch, default- 500
-- **n\_val\_seq**: number of video sequenced used for validation, default- 100
+#### Fusion Mechanism
+E_Layer0_t_fused = sigmoid(alpha_E) * Transformer(E_Layer0_t) + (1 - sigmoid(alpha_E)) * E_Layer0_t
 
-#### Model hyperparameters
-- **loss\_mode**: 'L\_0' or 'L\_all', default- 'L_0'
-- **peephole**: toggles incluse of peephole connection w/n the ConvLSTM, default- False
-- **lstm\_tied\_bias**: toggles the tieing of biases w/n ConvLST, default- False
-- **gating\_mode**: toggles between multiplicative 'mul' or subtractive 'sub' gating w/n ConvLSTM, default- 'mul'
-- **A\_channels & R\_channels**: number of channels within each layer of PredNet, default- (3, 48, 96, 192)
+- alpha_E: learnable fusion weight per layer (initialized: 0.45)
+- Applied when t % 3 == 0
 
+#### Output
+- Model file: [models/prednet-tf-sparse-L_all-mul-peepFalse-tbiasFalse.pt](transformer_mnist/models/)
+- Loss history: [data_compare/loss_history/](data_compare/loss_history/)
 
-After training is complete, the script saves two versions of the model: prendet-\*-best.pt (version with the lowest loss on validation set) and prednet-\*.pt (version saved after the last epoch).
-
-To test your models using [kitti_test.py](kitti_test.py) transfer them into your 'models' folder, set the testing and model hyperparamters accordingly, then run the script.  It should output the MSE between the GT and predicted sequences as well as the MSE if the model simply predicted the previous frame at each time step.
-
-#### A brief word on hyperparameters
-
-The default parameters listed above reproduce the results in the [paper](https://arxiv.org/abs/1605.08104) when using [prednet_relu_bug](prednet_relu_bug.py).  However, [prednet](prednet.py) underperforms under these parameters and overfits the data.  After a [coarse hyperparameter search](https://docs.google.com/spreadsheets/d/1-5LYZKMhMonAJnmb9t5XTLztYCSnrqe2ro0XkNei6mE/edit?usp=sharing), we found that shrinking the model helped to alleviate overfitting.  
-
-#### Data
-
-Acquiring the dataset requires multiple steps: 1) downloading the zip files 2) extracting and processsing the images.  Step 1 is done via running the download\_raw\_data\_<category>.sh scripts found in kitti_raw_data\raw\<category>.  Step 2 is handled by running the [process_kitti.py](process_kitty.py).
 
