@@ -96,12 +96,14 @@ def save_batch_prediction(vis_model, inputs, epoch, step, history_dir, model_nam
 	
 	for t in range(nt):
 		plt.subplot(gs[t])
-		plt.imshow(targets[i,t], interpolation='none', cmap='gray')
+		#TODO: Transformer MNIST Sparse - Extract first channel for 3-channel RGB images for correct grayscale display
+		plt.imshow(targets[i,t,:,:,0], interpolation='none', cmap='gray')
 		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 		if t==0: plt.ylabel('Input', fontsize=10)
 		
 		plt.subplot(gs[t + nt])
-		plt.imshow(pred[i,t], interpolation='none', cmap='gray')
+		#TODO: Transformer MNIST Sparse - Extract first channel for 3-channel RGB images for correct grayscale display
+		plt.imshow(pred[i,t,:,:,0], interpolation='none', cmap='gray')
 		plt.tick_params(axis='both', which='both', bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
 		if t==0: plt.ylabel('Predicted', fontsize=10)
 	
