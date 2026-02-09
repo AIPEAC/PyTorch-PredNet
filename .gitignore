@@ -23,6 +23,7 @@ X_val.hkl
 mnist_test_50.py
 mnist_train_all_short.py
 mnist_train_all_sparse_short.py
+*/history/
 transformer_mnist/history/
 original_mnist/history/
 
