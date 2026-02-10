@@ -46,7 +46,7 @@ class ConvLSTMCell(nn.Module):
 		input_dim: int
 			dim of input tensor
 		hidden_dim: int
-			dim of ouptut/hidde/cell tensor (number of kernels/channels)
+			dim of output/hidden/cell tensor (number of kernels/channels)
 		kernel_size: (int, int)
 			dims of kernel
 		gating_mode: str

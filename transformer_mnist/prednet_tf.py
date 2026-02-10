@@ -109,7 +109,7 @@ class PredNet(nn.Module):
 			update_A = nn.Sequential(nn.Conv2d(2* self.a_channels[l], self.a_channels[l+1], (3, 3), padding=1), self.maxpool)
 			setattr(self, 'update_A{}'.format(l), update_A)
 
-		# #TODO: PredNet Transformer - Initialize independent transformer blocks for each layer
+		# #TODO: PredNet Transformer - Initialize C transformer blocks for each layer
 		if self.use_transformer:
 			# Pre-calculate spatial dimensions for each layer
 			h, w = self.input_size
