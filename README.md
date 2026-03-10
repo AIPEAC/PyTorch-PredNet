@@ -9,7 +9,7 @@
 
 ## Implementation
 ### Directory
-  [predenet_pytorch_mnist/](https://github.com/AIPEAC/PyTorch-PredNet/tree/main/prednet_pytorch_mnist)
+- [predenet_pytorch_mnist/](prednet_pytorch_mnist/)
 
 #### Training
 - File: [mnist_train_all.py](original_mnist/mnist_train_all.py)
@@ -29,7 +29,7 @@
 - A_channels & R_channels: (3, 48, 96, 192)
 
 #### Output
-- Best model: [models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](original_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
-- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](original_mnist/history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl)
+- Best model: [models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](prednet_pytorch_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
+- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](prednet_pytorch_mnist/history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl)
 
 
