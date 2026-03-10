@@ -8,8 +8,8 @@
 ---
 
 ## Implementation
-
-  [Directory](/predenet_pytorch_mnist/)
+### Directory
+  [predenet_pytorch_mnist/](https://github.com/AIPEAC/PyTorch-PredNet/tree/main/prednet_pytorch_mnist)
 
 #### Training
 - File: [mnist_train_all.py](original_mnist/mnist_train_all.py)
