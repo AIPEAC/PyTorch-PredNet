@@ -152,6 +152,9 @@ time_loss_weights[0] = 0
 
 # Directories
 
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+os.makedirs(MODEL_DIR, exist_ok=True)
+
 train_file = os.path.join(DATA_DIR, 'X_train.hkl')
 #TODO: MNIST - removed train_sources, no source tracking needed
 val_file = os.path.join(DATA_DIR, 'X_val.hkl')
@@ -316,11 +319,11 @@ for epoch in range(num_epochs):
 		print('Validation Loss Decreased: {:.6f} --> {:.6f} \t Saving the Model'.format(min_val_loss, val_loss))
 		min_val_loss = val_loss
 		# Save model
-		torch.save(model.state_dict(), model_name + '-best.pt')
+		torch.save(model.state_dict(), os.path.join(MODEL_DIR, model_name + '-best.pt'))
 	print()
 
 # Save model
-torch.save(model.state_dict(), model_name + '.pt')
+torch.save(model.state_dict(), os.path.join(MODEL_DIR, model_name + '.pt'))
 
 #TODO: Training Loss - Loss history already saved line-by-line during training
 print(f'Loss history saved to {loss_history_path}')
