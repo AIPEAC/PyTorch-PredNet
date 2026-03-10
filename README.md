@@ -7,9 +7,9 @@
 
 ---
 
-## Original Implementation (KITTI Dataset)
+## Implementation
 
-### Directory: original_mnist/
+  [Directory](/predenet_pytorch_mnist/)
 
 #### Training
 - File: [mnist_train_all.py](original_mnist/mnist_train_all.py)
