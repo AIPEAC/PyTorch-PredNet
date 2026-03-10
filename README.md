@@ -30,6 +30,6 @@
 
 #### Output
 - Best model: [models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](prednet_pytorch_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
-- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](prednet_pytorch_mnist/history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl)
+- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](data_compare\loss_history\original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl)
 
 
