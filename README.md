@@ -9,27 +9,32 @@
 
 ## Implementation
 ### Directory
-- [predenet_pytorch_mnist/](prednet_pytorch_mnist/)
+- [prednet_pytorch_mnist/](prednet_pytorch_mnist/)
 
 #### Training
-- File: [mnist_train_all.py](original_mnist/mnist_train_all.py)
+- File: [mnist_train_all.py](prednet_pytorch_mnist/mnist_train_all.py)
 - Parameters:
-  - num_epochs: 150
-  - batch_size: 4
+  - num_epochs: 6
+  - batch_size: 2
   - lr: 0.001
-  - nt: 10 (sequence length)
-  - n_train_seq: 500
-  - n_val_seq: 100
-
+  - nt: 20 (sequence length)
+  - n_train_seq: 7000
+  - n_val_seq: 1000
+#### Dataset
+- File: [mnist_data.py](prednet_pytorch_mnist/mnist_data.py)
+- Parameters:
+  - nt: 20 (frames per sequence)
+  - image_size: (64, 64)
+  - channels: 3 (RGB)
 #### Model Hyperparameters
-- loss_mode: 'L_0' or 'L_all' (default: 'L_0')
+- loss_mode: 'L_0' or 'L_all' (default: 'L_all')
 - peephole: False
 - lstm_tied_bias: False
 - gating_mode: 'mul' or 'sub' (default: 'mul')
 - A_channels & R_channels: (3, 48, 96, 192)
 
 #### Output
-- Best model: [models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](prednet_pytorch_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
-- Loss history: [history/prednet-L_all-mul-peepFalse-tbiasFalse-param_history.jsonl](data_compare\loss_history\original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl)
+- Best model: [prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](prednet_pytorch_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
+- Loss history: [original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl](data_compare/loss_history/original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl)
 
 
