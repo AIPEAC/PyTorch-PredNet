@@ -37,4 +37,16 @@
 - Best model: [prednet-L_all-mul-peepFalse-tbiasFalse-best.pt](prednet_pytorch_mnist/models/prednet-L_all-mul-peepFalse-tbiasFalse-best.pt)
 - Loss history: [original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl](data_compare/loss_history/original_mnist-prednet-L_all-mul-peepFalse-tbiasFalse-loss_history.jsonl)
 
+## Results
+- Example predicted frames: 
+![alt text](image.png)
 
+## License
+This project is licensed under the [Apache 2.0](LICENSE) License.
+
+### Third-Party Notices
+This project is derived from the following works (see [NOTICE](NOTICE) for full attribution):
+
+- **[coxlab/prednet](https://github.com/coxlab/prednet)** — MIT License, Copyright (c) 2017 coxlab.  
+  The MIT license requires this copyright notice be preserved in all copies or substantial portions of this software.
+- **[leido/pytorch-prednet](https://github.com/leido/pytorch-prednet)** — No license declared. Used with attribution.
