@@ -1,0 +1,18 @@
+name: envv
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - numpy
+  - matplotlib
+  - pip:
+    - torch==1.9.0+cu111  # CUDA 11.1 (RTX 4050 Laptop GPU)
+    - torchvision==0.10.0
+    - torchaudio==0.9.0
+    - opencv-python
+    - pyyaml
+    - imageio
+    - hickle
+    - pillow
+    - scikit-image

@@ -1,0 +1,41 @@
+# my venv
+venv/
+
+# copilot instructions
+*.instructions.md
+.github/instructions/
+
+# cache files
+__pycache__/
+
+# MNIST data
+*.npy
+
+# processed MNIST data
+X_test.hkl
+X_train.hkl
+X_val.hkl
+
+# training scripts
+*.bat
+
+# test file
+mnist_test_50.py
+mnist_train_all_short.py
+mnist_train_all_sparse_short.py
+*/history/
+transformer_mnist/history/
+original_mnist/history/
+
+# original Kitti stuffs
+raw/
+kitti_raw_data_test.zip
+main_movies.zip
+main_movies/
+sources_val.hkl
+orlando_data/
+snake_plots/
+snake_video/
+data/
+*.mp4
+
